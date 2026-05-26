@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0B0C0E" />
+
+  <title>GESA Workforce Learning Track — Find the startups closing the skills gap</title>
+  <meta name="description" content="A new permanent track of the Global EdTech Startup Awards, focused on the startups building the next generation of workforce learning." />
+
+  <link rel="canonical" href="https://gesawf.github.io/" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="GESA Workforce Learning Track" />
+  <meta property="og:description" content="A new permanent track of the Global EdTech Startup Awards, focused on the startups building the next generation of workforce learning." />
+  <meta property="og:image" content="assets/og-image.png" />
+  <meta property="og:url" content="https://gesawf.github.io/" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="GESA Workforce Learning Track" />
+  <meta name="twitter:description" content="A new permanent track of the Global EdTech Startup Awards, focused on the startups building the next generation of workforce learning." />
+  <meta name="twitter:image" content="assets/og-image.png" />
+
+  <!-- Fonts: Fraunces (display serif) + Inter (sans body). Two faces only. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind via CDN (Play CDN supports arbitrary values + JIT) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: '#0B0C0E',
+            body: '#E8E8EA',
+            muted: '#9CA0A6',
+            line: '#1E2024',
+            accent: '#E55934',
+          },
+          fontFamily: {
+            serif: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- TODO: wire up analytics later. Plausible placeholder below — uncomment when ready.
+  <script defer data-domain="gesawf.github.io" src="https://plausible.io/js/script.js"></script>
+  -->
+
+  <style>
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .font-serif { font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; }
+
+    /* Focus ring — visible on dark, never default browser blue */
+    :focus-visible {
+      outline: 2px solid #E55934;
+      outline-offset: 3px;
+      border-radius: 2px;
+    }
+
+    /* Hero gradient — a single restrained radial hint in the accent. */
+    .hero-gradient {
+      background:
+        radial-gradient(ellipse 60% 50% at 85% 0%, rgba(229, 89, 52, 0.10) 0%, rgba(229, 89, 52, 0) 60%),
+        radial-gradient(ellipse 80% 60% at 0% 100%, rgba(229, 89, 52, 0.04) 0%, rgba(229, 89, 52, 0) 70%),
+        #0B0C0E;
+    }
+
+    /* Display headlines: tighten serif a touch, lift weight, kern. */
+    .display {
+      font-family: 'Fraunces', Georgia, serif;
+      font-optical-sizing: auto;
+      font-variation-settings: "opsz" 144, "SOFT" 50;
+      letter-spacing: -0.022em;
+      line-height: 1.02;
+    }
+    .display-md {
+      font-family: 'Fraunces', Georgia, serif;
+      font-optical-sizing: auto;
+      font-variation-settings: "opsz" 96, "SOFT" 50;
+      letter-spacing: -0.018em;
+      line-height: 1.06;
+    }
+
+    /* Small-caps eyebrows */
+    .eyebrow {
+      font-family: 'Inter', sans-serif;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    /* Hairline rule used between footer cols, around cards, etc. */
+    .hairline { border-color: #1E2024; }
+
+    /* Nav: starts transparent over hero, becomes opaque on scroll */
+    #site-nav {
+      transition: background-color 250ms ease, border-color 250ms ease, backdrop-filter 250ms ease;
+    }
+    #site-nav.is-scrolled {
+      background-color: rgba(11, 12, 14, 0.85);
+      backdrop-filter: saturate(140%) blur(12px);
+      border-bottom-color: #1E2024;
+    }
+
+    /* Fade-in on scroll — disabled when reduced motion is preferred.
+       Gated on the `js` class added by the inline script, so no-JS users
+       see content normally without ever being trapped at opacity: 0. */
+    .js .reveal {
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 700ms ease, transform 700ms ease;
+    }
+    .js .reveal.is-visible {
+      opacity: 1;
+      transform: none;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .reveal { opacity: 1; transform: none; transition: none; }
+      #site-nav { transition: none; }
+    }
+
+    /* Style <details>/<summary> so the FAQ doesn't read as a Wikipedia talk page */
+    details > summary { list-style: none; cursor: pointer; }
+    details > summary::-webkit-details-marker { display: none; }
+    details .chev {
+      display: inline-block;
+      transition: transform 200ms ease;
+      flex-shrink: 0;
+    }
+    details[open] .chev { transform: rotate(45deg); }
+
+    /* Make the timeline rule sit visually centered with the node dots */
+    .tl-rule { background: linear-gradient(90deg, #1E2024 0%, #2A2D33 50%, #1E2024 100%); }
+
+    /* Hero one-line line element — a thin animated horizontal stroke under the headline */
+    .hero-stroke {
+      height: 1px;
+      background: linear-gradient(90deg, rgba(229,89,52,0) 0%, rgba(229,89,52,0.55) 30%, rgba(229,89,52,0.55) 70%, rgba(229,89,52,0) 100%);
+      transform-origin: left center;
+      animation: stroke-in 1400ms ease-out 200ms both;
+    }
+    @keyframes stroke-in {
+      from { transform: scaleX(0); opacity: 0; }
+      to { transform: scaleX(1); opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hero-stroke { animation: none; }
+    }
+  </style>
+</head>
+
+<body class="bg-ink text-body font-sans antialiased selection:bg-accent/30 selection:text-white">
+
+  <!-- ============================================================
+       Sticky top nav — transparent over hero, opaque on scroll
+       ============================================================ -->
+  <header id="site-nav" class="fixed top-0 inset-x-0 z-50 border-b border-transparent">
+    <div class="mx-auto max-w-[1280px] px-6 lg:px-10 h-16 flex items-center justify-between">
+      <a href="#top" class="flex items-center gap-3 group" aria-label="GESA Workforce Learning Track home">
+        <span class="font-serif text-[1.35rem] leading-none text-body">GESA</span>
+        <span class="hairline border-l h-5"></span>
+        <span class="text-sm text-muted group-hover:text-body transition-colors">Workforce Learning Track</span>
+      </a>
+
+      <nav class="hidden lg:flex items-center gap-8 text-sm text-muted" aria-label="Page sections">
+        <a href="#the-track" class="hover:text-body transition-colors">The Track</a>
+        <a href="#for-startups" class="hover:text-body transition-colors">For Startups</a>
+        <a href="#for-sponsors" class="hover:text-body transition-colors">For Sponsors</a>
+        <a href="#timeline" class="hover:text-body transition-colors">Timeline</a>
+        <a href="#faq" class="hover:text-body transition-colors">FAQ</a>
+      </nav>
+
+      <div class="flex items-center gap-2">
+        <a href="#apply-placeholder"
+           class="hidden sm:inline-flex items-center h-9 px-3.5 text-sm text-body border border-line hover:border-body transition-colors"
+           aria-label="Apply as a startup">
+          Apply
+        </a>
+        <a href="#for-sponsors"
+           class="inline-flex items-center h-9 px-3.5 text-sm font-medium text-ink bg-accent hover:bg-[#F26A45] transition-colors whitespace-nowrap">
+          <span class="sm:hidden">Sponsor</span>
+          <span class="hidden sm:inline">Become a sponsor</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- ============================================================
+         1. Hero
+         ============================================================ -->
+    <section class="hero-gradient relative overflow-hidden">
+      <div class="mx-auto max-w-[1280px] px-6 lg:px-10 pt-40 pb-28 lg:pt-48 lg:pb-40 min-h-[88vh] flex flex-col justify-center">
+
+        <p class="eyebrow text-accent reveal">A new permanent track of the Global EdTech Startup Awards</p>
+
+        <h1 class="display text-body mt-8 text-[2.75rem] sm:text-[4.25rem] lg:text-[6.75rem] xl:text-[7.5rem] reveal">
+          Closing the skills gap<br class="hidden sm:inline"/>
+          won&rsquo;t come from hiring.
+          <span class="block text-muted font-normal italic mt-2 text-[1.8rem] sm:text-[2.75rem] lg:text-[4rem] xl:text-[4.5rem] leading-[1.08]">
+            It comes from learning faster<br class="hidden sm:block"/> than work changes.
+          </span>
+        </h1>
+
+        <div class="hero-stroke mt-12 w-[280px] max-w-full reveal" aria-hidden="true"></div>
+
+        <p class="mt-10 max-w-[640px] text-lg lg:text-xl text-muted leading-relaxed reveal">
+          The GESA Workforce Learning Track surfaces the startups building the next generation of how people learn at work — and connects them to the enterprises that need them.
+        </p>
+
+        <div class="mt-12 flex flex-col sm:flex-row gap-3 sm:gap-4 reveal">
+          <a href="#for-sponsors"
+             class="inline-flex items-center justify-center h-12 px-6 text-sm font-medium text-ink bg-accent hover:bg-[#F26A45] transition-colors">
+            Become a sponsor
+            <span class="ml-2" aria-hidden="true">→</span>
+          </a>
+          <a href="#apply-placeholder"
+             class="inline-flex items-center justify-center h-12 px-6 text-sm font-medium text-body border border-line hover:border-body transition-colors">
+            Apply as a startup
+          </a>
+        </div>
+
+        <p class="mt-12 text-xs text-muted reveal">
+          Powered by MindCET &nbsp;·&nbsp; 8,000+ startups, 130+ countries since 2014 &nbsp;·&nbsp; Finals at Bett, London, January 2027
+        </p>
+      </div>
+    </section>
+
+
+    <!-- ============================================================
+         2. The problem — three big stats + editorial block
+         ============================================================ -->
+    <section id="the-track" class="border-t border-line">
+      <div class="mx-auto max-w-[1280px] px-6 lg:px-10 py-28 lg:py-40">
+
+        <h2 class="display-md text-body text-[2.5rem] sm:text-[3.5rem] lg:text-[4.5rem] max-w-[900px] reveal">
+          Work is changing faster than hiring can keep up with.
+        </h2>
+
+        <div class="mt-20 grid grid-cols-1 md:grid-cols-3 gap-12 lg:gap-6 border-t border-line">
+          <div class="pt-10 lg:pr-8 reveal">
+            <p class="display text-accent text-[5rem] lg:text-[7rem] leading-none">39<span class="text-[3rem] lg:text-[4rem] align-top">%</span></p>
+            <p class="mt-6 text-body text-lg leading-snug">of core skills will change by 2030.</p>
+            <p class="mt-3 text-xs text-muted">Source: WEF Future of Jobs 2025.</p>
+          </div>
+          <div class="pt-10 lg:px-8 md:border-l md:border-line reveal">
+            <p class="display text-accent text-[5rem] lg:text-[7rem] leading-none">59<span class="text-[3rem] lg:text-[4rem] align-top">%</span></p>
+            <p class="mt-6 text-body text-lg leading-snug">of the global workforce will need reskilling by 2030.</p>
+            <p class="mt-3 text-xs text-muted">Source: WEF Future of Jobs 2025.</p>
+          </div>
+          <div class="pt-10 lg:pl-8 md:border-l md:border-line reveal">
+            <p class="display text-accent text-[5rem] lg:text-[7rem] leading-none">74<span class="text-[3rem] lg:text-[4rem] align-top">%</span></p>
+            <p class="mt-6 text-body text-lg leading-snug">of companies say they can&rsquo;t keep pace with demand for new skills.</p>
+            <p class="mt-3 text-xs text-muted">Source: LinkedIn Workplace Learning Report 2025.</p>
+          </div>
+        </div>
+
+        <div class="mt-24 max-w-[640px] mx-auto text-body text-lg lg:text-xl leading-relaxed space-y-6 reveal">
+          <p>
+            Corporate L&amp;D is a $400B+ global market<span class="text-muted">,</span> and yet 63% of employers still call the skills gap their single biggest barrier to transformation. <!-- TODO: confirm both figures with the Briefing doc -->
+            Hiring can&rsquo;t close it. Buying another LMS can&rsquo;t close it.
+          </p>
+          <p>
+            The next generation of workforce learning will. The GESA Workforce Learning Track exists to find it, validate it, and put it in front of the enterprises ready to deploy it.
+          </p>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ============================================================
+         3. What we're looking for (For Startups, part 1)
+         ============================================================ -->
+    <section id="for-startups" class="border-t border-line">
+      <div class="mx-auto max-w-[1280px] px-6 lg:px-10 py-28 lg:py-40">
+
+        <p class="eyebrow text-accent reveal">For Startups</p>
+        <h2 class="display-md text-body text-[2.5rem] sm:text-[3.5rem] lg:text-[4.5rem] mt-6 max-w-[900px] reveal">
+          What we&rsquo;re looking for.
+        </h2>
+        <p class="mt-6 max-w-[640px] text-lg text-muted reveal">
+          Startups building scalable solutions across workforce learning and development.
+        </p>
+
+        <div class="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-px bg-line border border-line">
+          <!-- 1 -->
+          <article class="bg-ink p-8 reveal flex flex-col">
+            <span class="text-accent" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+                <path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8"/>
+                <circle cx="12" cy="12" r="2.2"/>
+              </svg>
+            </span>
+            <h3 class="font-serif text-xl text-body mt-6">AI-powered reskilling &amp; upskilling platforms</h3>
+            <p class="mt-3 text-sm text-muted leading-relaxed">Tools that compress the time from &ldquo;skill needed&rdquo; to &ldquo;skill demonstrated.&rdquo;</p>
+          </article>
+          <!-- 2 -->
+          <article class="bg-ink p-8 reveal flex flex-col">
+            <span class="text-accent" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18"/>
+                <rect x="7" y="7" width="10" height="10"/>
+                <rect x="11" y="11" width="2" height="2"/>
+              </svg>
+            </span>
+            <h3 class="font-serif text-xl text-body mt-6">Personalized &amp; adaptive workplace training</h3>
+            <p class="mt-3 text-sm text-muted leading-relaxed">Learning that adjusts to the learner&rsquo;s role, level, and pace in real time.</p>
+          </article>
+          <!-- 3 -->
+          <article class="bg-ink p-8 reveal flex flex-col">
+            <span class="text-accent" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="5" cy="6" r="2"/>
+                <circle cx="19" cy="6" r="2"/>
+                <circle cx="12" cy="18" r="2"/>
+                <line x1="7" y1="6" x2="17" y2="6"/>
+                <line x1="6" y1="8" x2="11" y2="16"/>
+                <line x1="18" y1="8" x2="13" y2="16"/>
+              </svg>
+            </span>
+            <h3 class="font-serif text-xl text-body mt-6">Skills intelligence, mapping &amp; verification</h3>
+            <p class="mt-3 text-sm text-muted leading-relaxed">The skills-graph layer that makes skills-based organizations possible.</p>
+          </article>
+          <!-- 4 -->
+          <article class="bg-ink p-8 reveal flex flex-col">
+            <span class="text-accent" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18"/>
+                <rect x="9" y="9" width="6" height="6"/>
+              </svg>
+            </span>
+            <h3 class="font-serif text-xl text-body mt-6">Learning embedded in workflows &amp; daily tools</h3>
+            <p class="mt-3 text-sm text-muted leading-relaxed">Training that lives inside the CRM, IDE, or ticketing system — not in a separate LXP.</p>
+          </article>
+          <!-- 5 -->
+          <article class="bg-ink p-8 reveal flex flex-col">
+            <span class="text-accent" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                <path d="M4 12a8 8 0 0 1 13.5-5.8"/>
+                <path d="M20 12a8 8 0 0 1-13.5 5.8"/>
+                <path d="M17 3v4h-4"/>
+                <path d="M7 21v-4h4"/>
+              </svg>
+            </span>
+            <h3 class="font-serif text-xl text-body mt-6">Simulation, practice &amp; experiential learning</h3>
+            <p class="mt-3 text-sm text-muted leading-relaxed">Practice environments where people can fail safely and build real capability.</p>
+          </article>
+          <!-- 6 -->
+          <article class="bg-ink p-8 reveal flex flex-col">
+            <span class="text-accent" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+                <line x1="4" y1="6" x2="20" y2="6"/>
+                <line x1="4" y1="12" x2="14" y2="12"/>
+                <line x1="4" y1="18" x2="18" y2="18"/>
+              </svg>
+            </span>
+            <h3 class="font-serif text-xl text-body mt-6">New models for corporate learning at scale</h3>
+            <p class="mt-3 text-sm text-muted leading-relaxed">Cohort programs, apprenticeships, work-integrated learning that fit how organizations actually buy.</p>
+          </article>
+          <!-- 7 -->
+          <article class="bg-ink p-8 reveal flex flex-col">
+            <span class="text-accent" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18"/>
+                <path d="M8 12.5l2.5 2.5L16 9.5"/>
+              </svg>
+            </span>
+            <h3 class="font-serif text-xl text-body mt-6">Credentialing &amp; skills-based hiring infrastructure</h3>
+            <p class="mt-3 text-sm text-muted leading-relaxed">Proof-of-skill systems that work for employers and learners both.</p>
+          </article>
+          <!-- 8 — visual filler cell on xl so the grid resolves cleanly. Inert. -->
+          <div class="bg-ink p-8 hidden xl:block" aria-hidden="true"></div>
+        </div>
+
+        <p class="mt-10 max-w-[760px] text-base text-muted leading-relaxed reveal">
+          Solutions may target enterprises, SMBs, or individual workers — what matters is a clear connection to how organizations build the capability work now demands.
+        </p>
+      </div>
+    </section>
+
+
+    <!-- ============================================================
+         4. What winners get (For Startups, part 2)
+         ============================================================ -->
+    <section class="border-t border-line">
+      <div class="mx-auto max-w-[1280px] px-6 lg:px-10 py-28 lg:py-40">
+
+        <h2 class="display-md text-body text-[2.5rem] sm:text-[3.5rem] lg:text-[4.5rem] max-w-[900px] reveal">
+          What winners get.
+        </h2>
+
+        <div class="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line">
+          <div class="bg-ink p-8 lg:p-10 reveal">
+            <p class="font-serif text-accent text-[2.5rem] leading-none">01</p>
+            <h3 class="font-serif text-xl text-body mt-6">A funded enterprise pilot</h3>
+            <p class="mt-3 text-sm text-muted leading-relaxed">Run with one of the track&rsquo;s corporate partners.</p>
+          </div>
+          <div class="bg-ink p-8 lg:p-10 reveal">
+            <p class="font-serif text-accent text-[2.5rem] leading-none">02</p>
+            <h3 class="font-serif text-xl text-body mt-6">A main-stage moment</h3>
+            <p class="mt-3 text-sm text-muted leading-relaxed">At a major international Future-of-Work or L&amp;D conference.</p>
+          </div>
+          <div class="bg-ink p-8 lg:p-10 reveal">
+            <p class="font-serif text-accent text-[2.5rem] leading-none">03</p>
+            <h3 class="font-serif text-xl text-body mt-6">Strategic mentorship</h3>
+            <p class="mt-3 text-sm text-muted leading-relaxed">From senior corporate L&amp;D operators.</p>
+          </div>
+          <div class="bg-ink p-8 lg:p-10 reveal">
+            <p class="font-serif text-accent text-[2.5rem] leading-none">04</p>
+            <h3 class="font-serif text-xl text-body mt-6">The GESAwards network</h3>
+            <p class="mt-3 text-sm text-muted leading-relaxed">8,000+ startups, 130+ countries, the judges&rsquo; rolodex.</p>
+          </div>
+        </div>
+
+        <div class="mt-14 reveal">
+          <a href="#apply-placeholder"
+             class="inline-flex items-center text-base text-body border-b border-accent pb-1 hover:text-accent transition-colors">
+            See the criteria and apply
+            <span class="ml-2" aria-hidden="true">→</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ============================================================
+         5. Timeline
+         ============================================================ -->
+    <section id="timeline" class="border-t border-line">
+      <div class="mx-auto max-w-[1280px] px-6 lg:px-10 py-28 lg:py-40">
+
+        <h2 class="display-md text-body text-[2.5rem] sm:text-[3.5rem] lg:text-[4.5rem] max-w-[900px] reveal">
+          The 2026–27 cycle.
+        </h2>
+
+        <!-- Desktop horizontal / mobile vertical -->
+        <div class="mt-20">
+          <!-- Horizontal rule + nodes (desktop) -->
+          <div class="hidden md:block">
+            <div class="relative">
+              <div class="absolute left-0 right-0 top-[14px] h-px tl-rule" aria-hidden="true"></div>
+              <ol class="relative grid grid-cols-4 gap-6">
+                <li class="reveal">
+                  <span class="block w-3.5 h-3.5 rounded-full bg-accent ring-4 ring-ink"></span>
+                  <p class="font-serif text-body text-2xl mt-8">April 2026</p>
+                  <p class="mt-3 text-sm text-muted leading-relaxed max-w-[230px]">Applications open.</p>
+                </li>
+                <li class="reveal">
+                  <span class="block w-3.5 h-3.5 rounded-full bg-body ring-4 ring-ink"></span>
+                  <p class="font-serif text-body text-2xl mt-8">October 30, 2026</p>
+                  <p class="mt-3 text-sm text-muted leading-relaxed max-w-[230px]">Application deadline.</p>
+                </li>
+                <li class="reveal">
+                  <span class="block w-3.5 h-3.5 rounded-full bg-body ring-4 ring-ink"></span>
+                  <p class="font-serif text-body text-2xl mt-8">Nov–Dec 2026</p>
+                  <p class="mt-3 text-sm text-muted leading-relaxed max-w-[230px]">Regional semifinals, incl. OEB Berlin.</p>
+                </li>
+                <li class="reveal">
+                  <span class="block w-3.5 h-3.5 rounded-full bg-body ring-4 ring-ink"></span>
+                  <p class="font-serif text-body text-2xl mt-8">January 2027</p>
+                  <p class="mt-3 text-sm text-muted leading-relaxed max-w-[230px]">Global finals at the Bett Show, London.</p>
+                </li>
+              </ol>
+            </div>
+          </div>
+
+          <!-- Vertical (mobile) -->
+          <ol class="md:hidden relative pl-6 border-l border-line space-y-12">
+            <li class="reveal relative">
+              <span class="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-accent ring-4 ring-ink"></span>
+              <p class="font-serif text-body text-xl">April 2026</p>
+              <p class="mt-2 text-sm text-muted leading-relaxed">Applications open.</p>
+            </li>
+            <li class="reveal relative">
+              <span class="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-body ring-4 ring-ink"></span>
+              <p class="font-serif text-body text-xl">October 30, 2026</p>
+              <p class="mt-2 text-sm text-muted leading-relaxed">Application deadline.</p>
+            </li>
+            <li class="reveal relative">
+              <span class="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-body ring-4 ring-ink"></span>
+              <p class="font-serif text-body text-xl">Nov–Dec 2026</p>
+              <p class="mt-2 text-sm text-muted leading-relaxed">Regional semifinals, incl. OEB Berlin.</p>
+            </li>
+            <li class="reveal relative">
+              <span class="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-body ring-4 ring-ink"></span>
+              <p class="font-serif text-body text-xl">January 2027</p>
+              <p class="mt-2 text-sm text-muted leading-relaxed">Global finals at the Bett Show, London.</p>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ============================================================
+         6. For Sponsors
+         ============================================================ -->
+    <section id="for-sponsors" class="border-t border-line bg-[#0E0F12]">
+      <div class="mx-auto max-w-[1280px] px-6 lg:px-10 py-28 lg:py-40">
+
+        <p class="eyebrow text-accent reveal">For Sponsors</p>
+        <h2 class="display-md text-body text-[2.5rem] sm:text-[3.5rem] lg:text-[5rem] mt-6 max-w-[1000px] reveal">
+          Sponsor the track that surfaces the next category of workforce learning.
+        </h2>
+
+        <div class="mt-12 max-w-[720px] text-body text-lg lg:text-xl leading-relaxed space-y-6 reveal">
+          <p>
+            The corporate training market is $400B+ and growing — but the winners of the next decade haven&rsquo;t been picked yet. The GESA Workforce Learning Track is built to find them, evaluate them at depth, and route the strongest to the sponsors best-placed to deploy them.
+          </p>
+          <p class="text-muted">
+            Sponsors don&rsquo;t watch from the sidelines. They sit on the judging panel, see the full applicant pipeline, run pilot conversations with finalists, and shape the criteria for the next cycle.
+          </p>
+        </div>
+
+        <!-- What sponsors get -->
+        <div class="mt-20 reveal">
+          <p class="eyebrow text-muted">What sponsors get</p>
+          <ul class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-5 max-w-[1000px]">
+            <li class="flex gap-4 text-body">
+              <span class="text-accent shrink-0 mt-1" aria-hidden="true">—</span>
+              Full applicant pipeline across 130+ countries
+            </li>
+            <li class="flex gap-4 text-body">
+              <span class="text-accent shrink-0 mt-1" aria-hidden="true">—</span>
+              A judging-panel seat and direct founder access
+            </li>
+            <li class="flex gap-4 text-body">
+              <span class="text-accent shrink-0 mt-1" aria-hidden="true">—</span>
+              First-look pilot and partnership conversations with finalists
+            </li>
+            <li class="flex gap-4 text-body">
+              <span class="text-accent shrink-0 mt-1" aria-hidden="true">—</span>
+              Co-branded visibility across the track and the broader GESAwards platform
+            </li>
+            <li class="flex gap-4 text-body">
+              <span class="text-accent shrink-0 mt-1" aria-hidden="true">—</span>
+              Thought-leadership placement across the GESA network
+            </li>
+            <li class="flex gap-4 text-body">
+              <span class="text-accent shrink-0 mt-1" aria-hidden="true">—</span>
+              Market insight drawn from hundreds of applications
+            </li>
+          </ul>
+        </div>
+
+        <!-- Sponsor tiers. TODO: replace bullet copy with exact language from the Collateral doc. -->
+        <div class="mt-24 grid grid-cols-1 md:grid-cols-3 gap-px bg-line border border-line">
+          <article class="bg-[#0E0F12] p-8 lg:p-10 reveal">
+            <p class="eyebrow text-accent">Title</p>
+            <h3 class="font-serif text-2xl text-body mt-4">Title Partner</h3>
+            <p class="mt-4 text-sm text-muted leading-relaxed">One per cycle. The track is named in association with you for the year.</p>
+            <ul class="mt-8 space-y-3 text-sm text-body">
+              <li class="flex gap-3"><span class="text-muted shrink-0">·</span>Track named in association for the cycle</li>
+              <li class="flex gap-3"><span class="text-muted shrink-0">·</span>Lead seat on the international judging panel</li>
+              <li class="flex gap-3"><span class="text-muted shrink-0">·</span>First-look access to all applicants and finalists</li>
+              <li class="flex gap-3"><span class="text-muted shrink-0">·</span>The funded enterprise pilot is scoped with your team</li>
+              <li class="flex gap-3"><span class="text-muted shrink-0">·</span>Co-authored thought-leadership and on-stage presence at finals</li>
+            </ul>
+          </article>
+
+          <article class="bg-[#0E0F12] p-8 lg:p-10 reveal">
+            <p class="eyebrow text-accent">Partner</p>
+            <h3 class="font-serif text-2xl text-body mt-4">Partner Sponsor</h3>
+            <p class="mt-4 text-sm text-muted leading-relaxed">A small number per cycle. Strategic co-branding and active panel involvement.</p>
+            <ul class="mt-8 space-y-3 text-sm text-body">
+              <li class="flex gap-3"><span class="text-muted shrink-0">·</span>Seat on the international judging panel</li>
+              <li class="flex gap-3"><span class="text-muted shrink-0">·</span>Full applicant pipeline visibility</li>
+              <li class="flex gap-3"><span class="text-muted shrink-0">·</span>Direct pilot conversations with shortlisted finalists</li>
+              <li class="flex gap-3"><span class="text-muted shrink-0">·</span>Co-branded presence across track marketing and finals</li>
+              <li class="flex gap-3"><span class="text-muted shrink-0">·</span>Joint thought-leadership across the GESA network</li>
+            </ul>
+          </article>
+
+          <article class="bg-[#0E0F12] p-8 lg:p-10 reveal">
+            <p class="eyebrow text-accent">Supporting</p>
+            <h3 class="font-serif text-2xl text-body mt-4">Supporting Sponsor</h3>
+            <p class="mt-4 text-sm text-muted leading-relaxed">Broader access for funds and operators who want pipeline visibility without naming rights.</p>
+            <ul class="mt-8 space-y-3 text-sm text-body">
+              <li class="flex gap-3"><span class="text-muted shrink-0">·</span>Pipeline summary report after each cycle</li>
+              <li class="flex gap-3"><span class="text-muted shrink-0">·</span>Invitations to the finals and to private sponsor briefings</li>
+              <li class="flex gap-3"><span class="text-muted shrink-0">·</span>Recognition across track website and finals materials</li>
+              <li class="flex gap-3"><span class="text-muted shrink-0">·</span>First option to upgrade in the next cycle</li>
+            </ul>
+          </article>
+        </div>
+
+        <!-- TODO: replace this mailto with the operator-confirmed address. Subject + body pre-filled. -->
+        <div class="mt-16 reveal">
+          <a href="mailto:workforce-track@globaledtechawards.org?subject=GESA%20Workforce%20Learning%20Track%20%E2%80%94%20Sponsorship%20conversation&body=Hello%2C%0A%0AI%27d%20like%20to%20learn%20more%20about%20sponsoring%20the%20GESA%20Workforce%20Learning%20Track.%0A%0AOrganization%3A%0ARole%3A%0ATier%20of%20interest%20(Title%20%2F%20Partner%20%2F%20Supporting)%3A%0A%0AThanks%2C"
+             class="inline-flex items-center h-12 px-6 text-sm font-medium text-ink bg-accent hover:bg-[#F26A45] transition-colors">
+            Talk to the track curator
+            <span class="ml-2" aria-hidden="true">→</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ============================================================
+         7. Why this track exists
+         ============================================================ -->
+    <section class="border-t border-line">
+      <div class="mx-auto max-w-[1280px] px-6 lg:px-10 py-28 lg:py-40">
+
+        <h2 class="display-md text-body text-[2.5rem] sm:text-[3.5rem] lg:text-[4.5rem] max-w-[900px] reveal">
+          Why this track exists.
+        </h2>
+
+        <div class="mt-20 grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-16 max-w-[1100px]">
+          <div class="reveal">
+            <p class="eyebrow text-accent">Global, not US-anchored</p>
+            <p class="mt-4 text-body text-lg leading-relaxed">
+              GESA already runs regional semifinals on six continents. This track inherits that footprint from day one — most workforce-learning competitions don&rsquo;t.
+            </p>
+          </div>
+          <div class="reveal">
+            <p class="eyebrow text-accent">A pilot, not a plaque</p>
+            <p class="mt-4 text-body text-lg leading-relaxed">
+              Other awards in this space confer recognition. This one bundles a real, funded enterprise pilot with a corporate partner — because recognition without distribution doesn&rsquo;t move a startup forward.
+            </p>
+          </div>
+          <div class="reveal">
+            <p class="eyebrow text-accent">Workforce-specific, not generic EdTech</p>
+            <p class="mt-4 text-body text-lg leading-relaxed">
+              AI is one accelerant of this category, not the headline. Skills intelligence, simulation, credentialing, and work-integrated learning all sit inside the scope. The frame is built to outlast the AI news cycle.
+            </p>
+          </div>
+          <div class="reveal">
+            <p class="eyebrow text-accent">Built with operators, not for them</p>
+            <p class="mt-4 text-body text-lg leading-relaxed">
+              Sponsors shape the criteria, sit on the panel, and meet the finalists directly. The track is a working forum, not a press release.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ============================================================
+         8. Curators — light touch
+         ============================================================ -->
+    <section class="border-t border-line">
+      <div class="mx-auto max-w-[1280px] px-6 lg:px-10 py-24 lg:py-32">
+
+        <p class="eyebrow text-accent reveal">Curated by</p>
+
+        <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10 max-w-[900px]">
+          <div class="reveal">
+            <h3 class="font-serif text-2xl text-body">MindCET</h3>
+            <p class="mt-3 text-base text-muted leading-relaxed">
+              Organizer of the Global EdTech Startup Awards since 2014. Operates the international network of regional semifinals across six continents.
+            </p>
+          </div>
+          <div class="reveal">
+            <!-- TODO: confirm curator attribution (name + org) before publish -->
+            <h3 class="font-serif text-2xl text-body">[Track curator — TODO]</h3>
+            <p class="mt-3 text-base text-muted leading-relaxed">
+              Day-to-day curation of the Workforce Learning Track, including sponsor partnerships, judging panel, and finalist selection.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ============================================================
+         9. FAQ
+         ============================================================ -->
+    <section id="faq" class="border-t border-line">
+      <div class="mx-auto max-w-[1280px] px-6 lg:px-10 py-28 lg:py-40">
+
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-12 lg:gap-24">
+          <div>
+            <h2 class="display-md text-body text-[2.5rem] sm:text-[3.5rem] lg:text-[4rem] reveal">
+              Questions, briefly.
+            </h2>
+            <p class="mt-6 text-base text-muted max-w-[320px] reveal">
+              Anything missing? Email <a href="mailto:workforce-track@globaledtechawards.org" class="text-body border-b border-line hover:border-accent transition-colors">workforce-track@globaledtechawards.org</a>.
+            </p>
+          </div>
+
+          <div class="divide-y divide-line border-t border-b border-line">
+            <details class="group reveal">
+              <summary class="flex items-center justify-between gap-6 py-6 text-body">
+                <span class="font-serif text-xl">Is there an application fee?</span>
+                <span class="chev text-muted text-xl" aria-hidden="true">+</span>
+              </summary>
+              <div class="pb-6 pr-10 text-muted leading-relaxed">No.</div>
+            </details>
+
+            <details class="group reveal">
+              <summary class="flex items-center justify-between gap-6 py-6 text-body">
+                <span class="font-serif text-xl">What stage of startup can apply?</span>
+                <span class="chev text-muted text-xl" aria-hidden="true">+</span>
+              </summary>
+              <div class="pb-6 pr-10 text-muted leading-relaxed">
+                Early-stage and growth-stage, with a product in market or near launch. No geographic restrictions.
+              </div>
+            </details>
+
+            <details class="group reveal">
+              <summary class="flex items-center justify-between gap-6 py-6 text-body">
+                <span class="font-serif text-xl">What does the funded enterprise pilot look like?</span>
+                <span class="chev text-muted text-xl" aria-hidden="true">+</span>
+              </summary>
+              <div class="pb-6 pr-10 text-muted leading-relaxed">
+                Each cycle&rsquo;s pilot is shaped with that cycle&rsquo;s sponsor partner. Winners are introduced directly to the partner team and the scope is co-designed.
+              </div>
+            </details>
+
+            <details class="group reveal">
+              <summary class="flex items-center justify-between gap-6 py-6 text-body">
+                <span class="font-serif text-xl">How are winners selected?</span>
+                <span class="chev text-muted text-xl" aria-hidden="true">+</span>
+              </summary>
+              <div class="pb-6 pr-10 text-muted leading-relaxed">
+                An international expert panel evaluates against five criteria: clear pain point, pedagogical approach, user experience, business model, and product viability.
+              </div>
+            </details>
+
+            <details class="group reveal">
+              <summary class="flex items-center justify-between gap-6 py-6 text-body">
+                <span class="font-serif text-xl">How does GESA differ from HolonIQ, GSV Cup, or HR Tech Pitchfest?</span>
+                <span class="chev text-muted text-xl" aria-hidden="true">+</span>
+              </summary>
+              <div class="pb-6 pr-10 text-muted leading-relaxed">
+                Three differences. GESA runs regional semifinals on six continents — most workforce-learning competitions don&rsquo;t. The prize is a funded enterprise pilot with a corporate partner, not recognition alone. And the scope is workforce-learning-specific rather than generic EdTech.
+              </div>
+            </details>
+
+            <details class="group reveal">
+              <summary class="flex items-center justify-between gap-6 py-6 text-body">
+                <span class="font-serif text-xl">Can investors and VCs sponsor?</span>
+                <span class="chev text-muted text-xl" aria-hidden="true">+</span>
+              </summary>
+              <div class="pb-6 pr-10 text-muted leading-relaxed">
+                Yes. Funds typically engage at Partner or Supporting tier — the value sits in pipeline access and direct introductions to founders the track has already validated.
+              </div>
+            </details>
+
+            <details class="group reveal">
+              <summary class="flex items-center justify-between gap-6 py-6 text-body">
+                <span class="font-serif text-xl">Who runs the track day-to-day?</span>
+                <span class="chev text-muted text-xl" aria-hidden="true">+</span>
+              </summary>
+              <div class="pb-6 pr-10 text-muted leading-relaxed">
+                MindCET as organizer, with track curation by [TODO: confirm curator].
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+
+  <!-- ============================================================
+       Footer
+       ============================================================ -->
+  <footer class="border-t border-line">
+    <div class="mx-auto max-w-[1280px] px-6 lg:px-10 py-16 lg:py-20">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <div>
+          <p class="font-serif text-xl text-body">GESA Workforce Learning Track</p>
+          <p class="mt-3 text-sm text-muted max-w-[280px] leading-relaxed">
+            A permanent track of the Global EdTech Startup Awards, focused on the next generation of workforce learning.
+          </p>
+        </div>
+
+        <nav aria-label="Footer navigation">
+          <p class="eyebrow text-muted">The page</p>
+          <ul class="mt-4 space-y-2 text-sm">
+            <li><a href="#the-track" class="text-body hover:text-accent transition-colors">The Track</a></li>
+            <li><a href="#for-startups" class="text-body hover:text-accent transition-colors">For Startups</a></li>
+            <li><a href="#for-sponsors" class="text-body hover:text-accent transition-colors">For Sponsors</a></li>
+            <li><a href="#timeline" class="text-body hover:text-accent transition-colors">Timeline</a></li>
+            <li><a href="#faq" class="text-body hover:text-accent transition-colors">FAQ</a></li>
+          </ul>
+        </nav>
+
+        <div>
+          <p class="eyebrow text-muted">Contact</p>
+          <ul class="mt-4 space-y-2 text-sm">
+            <li>
+              <!-- TODO: confirm public-facing contact address -->
+              <a href="mailto:workforce-track@globaledtechawards.org" class="text-body hover:text-accent transition-colors">workforce-track@globaledtechawards.org</a>
+            </li>
+            <li>
+              <!-- TODO: confirm LinkedIn URL -->
+              <a href="#" class="text-body hover:text-accent transition-colors">LinkedIn</a>
+            </li>
+          </ul>
+          <p class="mt-8 eyebrow text-muted">Powered by</p>
+          <p class="mt-3 text-sm text-body">MindCET</p>
+        </div>
+      </div>
+
+      <div class="mt-16 pt-6 border-t border-line flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-xs text-muted">
+        <p>© 2026 Global EdTech Startup Awards. All rights reserved.</p>
+        <p>
+          <a href="https://gesawards.org/terms" class="hover:text-body transition-colors">GESA terms</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+
+
+  <!-- ============================================================
+       Tiny JS: nav scroll state + reveal-on-scroll
+       ============================================================ -->
+  <script>
+    (function () {
+      // Mark JS as available so the reveal-on-scroll CSS engages.
+      // Without this class, .reveal elements stay at their natural opacity for no-JS users.
+      document.documentElement.classList.add('js');
+
+      const nav = document.getElementById('site-nav');
+      const onScroll = () => {
+        if (window.scrollY > 24) nav.classList.add('is-scrolled');
+        else nav.classList.remove('is-scrolled');
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const reveals = document.querySelectorAll('.reveal');
+      const showAll = () => reveals.forEach((el) => el.classList.add('is-visible'));
+
+      if (reduceMotion || !('IntersectionObserver' in window)) {
+        showAll();
+        return;
+      }
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+      reveals.forEach((el) => io.observe(el));
+      // Safety net: if IO never fires (some embedded webviews, broken
+      // configurations), force-show everything after 1.5s so the page is
+      // never trapped at opacity: 0.
+      setTimeout(showAll, 1500);
+    })();
+  </script>
+</body>
+</html>
