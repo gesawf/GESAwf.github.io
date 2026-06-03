@@ -52,7 +52,7 @@ Search `index.html` for `TODO:` to find every one. Current set:
 Source-doc-aligned (no longer TODOs):
 
 - Sponsor-tier copy now uses verbatim language from the Collateral doc.
-- Curator block resolves to *Lucian Cosinschi · LVA*.
+- Curator block resolves to *Sharptext*.
 - Prize list expanded to match the six items in the Collateral doc.
 - Timeline semifinals span aligned to *Oct–Dec 2026* per the Collateral doc's "The Process" section.
 
