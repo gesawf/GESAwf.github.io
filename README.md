@@ -2,7 +2,7 @@
 
 A single-page marketing site for the GESA Workforce Learning Track. Pure HTML + Tailwind CDN + ~30 lines of vanilla JS. No build step.
 
-Lives at **[gesawf.github.io](https://gesawf.github.io/)**.
+Lives at **[gesa.sharptext.org](https://gesa.sharptext.org/)** (custom domain via `CNAME`), also reachable at `gesawf.github.io`.
 
 ## Run locally
 
