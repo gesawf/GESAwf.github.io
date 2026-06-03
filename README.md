@@ -56,6 +56,16 @@ Source-doc-aligned (no longer TODOs):
 - Prize list expanded to match the six items in the Collateral doc.
 - Timeline semifinals span aligned to *Oct–Dec 2026* per the Collateral doc's "The Process" section.
 
+## Light / dark theme
+
+The site ships with both a dark theme (the design default) and a light theme, switchable via the toggle in the nav (sun/moon icon).
+
+- **How it works:** every Tailwind custom color (`ink`, `body`, `muted`, `line`, `surface`, `accent`, …) points at a CSS variable. Two sets of those variables are defined — on `:root` (dark) and on `html.light` (light). Flipping the `.light` class on `<html>` re-themes the whole page; no markup changes.
+- **Initial theme** is resolved by a tiny inline script in `<head>` *before paint* (so there's no flash of the wrong theme): saved choice → OS `prefers-color-scheme` → dark.
+- **Choice persists** in `localStorage` under the `theme` key.
+- **Accent contrast:** `#E55934` passes WCAG AA on dark but only ~3.5:1 on light, so in light mode the accent deepens to `#C5471D` (≥4.5:1 for small text) and filled-button labels flip to white. All AA-verified.
+- The toggle is hidden for no-JS users (gated on the `.js` class) so nobody clicks a dead control. No-JS users get the dark default.
+
 ## Stack notes
 
 - Tailwind via the Play CDN (`https://cdn.tailwindcss.com`). For production you can swap to a built CSS file later — not required for v1.
