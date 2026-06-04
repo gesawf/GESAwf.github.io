@@ -474,7 +474,7 @@
         </div>
 
         <div class="mt-16 reveal">
-          <a href="mailto:gesa@sharptext.org?subject=GESA%20Workforce%20Learning%20Track%20%E2%80%94%20Partnership%20conversation&body=Hello%2C%0A%0AI%27d%20like%20to%20learn%20more%20about%20partnering%20on%20the%20GESA%20Workforce%20Learning%20Track.%0A%0AOrganization%3A%0ARole%3A%0ATier%20of%20interest%20(Lead%20%2F%20Track%20%2F%20Supporting)%3A%0A%0AThanks%2C"
+          <a href="#contact"
              class="inline-flex items-center h-12 px-6 text-sm font-medium text-onAccent bg-accent hover:bg-accentHover transition-colors">
             Talk to the track curator
             <span class="ml-2" aria-hidden="true">→</span>
@@ -878,6 +878,73 @@
       </div>
     </section>
 
+
+    <!-- ============================================================
+         10. Contact — Formspree form (partner enquiries)
+         ============================================================ -->
+    <section id="contact" class="border-t border-line bg-surface">
+      <div class="mx-auto max-w-[1280px] px-6 lg:px-10 py-28 lg:py-40">
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-12 lg:gap-24">
+
+          <div>
+            <p class="eyebrow text-accent reveal">Get in touch</p>
+            <h2 class="display-md text-body text-[2.5rem] sm:text-[3.5rem] lg:text-[4rem] mt-6 reveal">
+              Talk to the track curator.
+            </h2>
+            <p class="mt-6 max-w-[420px] text-lg text-muted leading-relaxed reveal">
+              Tell us about your organization and what you&rsquo;re looking for. No pitch — a short conversation to see whether there&rsquo;s a fit.
+            </p>
+            <p class="mt-8 text-sm text-muted reveal">
+              Prefer email? <a href="mailto:gesa@sharptext.org" class="text-body border-b border-line hover:border-accent transition-colors">gesa@sharptext.org</a>
+            </p>
+          </div>
+
+          <!-- Formspree endpoint. Works without JS (native POST → Formspree thank-you page);
+               the inline script below upgrades it to an in-place success message. -->
+          <form id="contact-form" action="https://formspree.io/f/xkoagwov" method="POST" class="reveal">
+            <input type="hidden" name="_subject" value="GESA Workforce Learning Track — Partnership enquiry" />
+            <!-- Honeypot: bots fill it, humans never see it. -->
+            <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true" />
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <label for="cf-name" class="block text-sm text-muted mb-2">Name</label>
+                <input id="cf-name" name="name" type="text" required autocomplete="name"
+                  class="w-full h-12 px-4 bg-transparent border border-line text-body focus:border-accent focus:outline-none transition-colors" />
+              </div>
+              <div>
+                <label for="cf-email" class="block text-sm text-muted mb-2">Email</label>
+                <input id="cf-email" name="email" type="email" required autocomplete="email"
+                  class="w-full h-12 px-4 bg-transparent border border-line text-body focus:border-accent focus:outline-none transition-colors" />
+              </div>
+            </div>
+
+            <div class="mt-5">
+              <label for="cf-org" class="block text-sm text-muted mb-2">Organization</label>
+              <input id="cf-org" name="organization" type="text" autocomplete="organization"
+                class="w-full h-12 px-4 bg-transparent border border-line text-body focus:border-accent focus:outline-none transition-colors" />
+            </div>
+
+            <div class="mt-5">
+              <label for="cf-message" class="block text-sm text-muted mb-2">Message</label>
+              <textarea id="cf-message" name="message" rows="5" required
+                class="w-full px-4 py-3 bg-transparent border border-line text-body focus:border-accent focus:outline-none transition-colors resize-y"></textarea>
+            </div>
+
+            <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+              <button type="submit"
+                class="inline-flex items-center h-12 px-6 text-sm font-medium text-onAccent bg-accent hover:bg-accentHover transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                <span class="cf-label">Send message</span>
+                <span class="ml-2" aria-hidden="true">→</span>
+              </button>
+              <p id="cf-status" class="text-sm text-muted" role="status" aria-live="polite"></p>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </section>
+
   </main>
 
 
@@ -957,6 +1024,50 @@
             localStorage.setItem('theme', root.classList.contains('light') ? 'light' : 'dark');
           } catch (e) {}
           syncTheme();
+        });
+      }
+
+      // Contact form — submit to Formspree via fetch so we can show an
+      // in-place success message instead of bouncing to Formspree's page.
+      // (Placed before the reduced-motion early-return below so it always runs.)
+      const contactForm = document.getElementById('contact-form');
+      if (contactForm) {
+        const status = document.getElementById('cf-status');
+        const submitBtn = contactForm.querySelector('button[type="submit"]');
+        const submitLabel = contactForm.querySelector('.cf-label');
+        const resetBtn = () => {
+          if (submitBtn) submitBtn.disabled = false;
+          if (submitLabel) submitLabel.textContent = 'Send message';
+        };
+        const fail = (msg) => {
+          if (status) { status.textContent = msg; status.classList.add('text-accent'); }
+          resetBtn();
+        };
+        contactForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          if (status) { status.textContent = ''; status.classList.remove('text-accent'); }
+          if (submitBtn) submitBtn.disabled = true;
+          if (submitLabel) submitLabel.textContent = 'Sending…';
+          fetch(contactForm.action, {
+            method: 'POST',
+            body: new FormData(contactForm),
+            headers: { Accept: 'application/json' },
+          })
+            .then((res) => {
+              if (res.ok) {
+                contactForm.innerHTML =
+                  '<p class="text-body text-lg leading-relaxed">Thanks — your message is on its way. We&rsquo;ll be in touch shortly.</p>';
+              } else {
+                res.json().then((data) => {
+                  fail(
+                    data && data.errors
+                      ? data.errors.map((x) => x.message).join(', ')
+                      : 'Something went wrong. Please email gesa@sharptext.org.'
+                  );
+                }).catch(() => fail('Something went wrong. Please email gesa@sharptext.org.'));
+              }
+            })
+            .catch(() => fail('Network error. Please email gesa@sharptext.org.'));
         });
       }
 
