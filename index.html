@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0B0C0E" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="robots" content="index, follow" />
 
   <!-- Resolve theme before paint to avoid a flash of the wrong theme.
        Order of precedence: saved choice → OS preference → dark (the design default). -->
@@ -26,24 +28,54 @@
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="GESA Workforce Learning Track" />
+  <meta property="og:locale" content="en_GB" />
   <meta property="og:title" content="GESA Workforce Learning Track" />
   <meta property="og:description" content="A new permanent track of the Global EdTech Startup Awards, focused on the startups building better ways to learn at work." />
-  <meta property="og:image" content="assets/og-image.png" />
+  <meta property="og:image" content="https://gesa.sharptext.org/assets/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="GESA Workforce Learning Track — closing the skills gap won't come from hiring." />
   <meta property="og:url" content="https://gesa.sharptext.org/" />
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="GESA Workforce Learning Track" />
   <meta name="twitter:description" content="A new permanent track of the Global EdTech Startup Awards, focused on the startups building better ways to learn at work." />
-  <meta name="twitter:image" content="assets/og-image.png" />
+  <meta name="twitter:image" content="https://gesa.sharptext.org/assets/og-image.png" />
+  <meta name="twitter:image:alt" content="GESA Workforce Learning Track — closing the skills gap won't come from hiring." />
+
+  <!-- Structured data: helps search engines understand the page. Plain JSON — edit freely. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "GESA Workforce Learning Track",
+    "url": "https://gesa.sharptext.org/",
+    "description": "A permanent track of the Global EdTech Startup Awards, focused on startups building better ways to learn at work.",
+    "inLanguage": "en",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Global EdTech Startup Awards",
+      "url": "https://www.globaledtechawards.org/"
+    }
+  }
+  </script>
+
+  <!-- Open the TLS connection to the Tailwind CDN early (render-critical script). -->
+  <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin />
 
   <!-- Fonts: Fraunces (display serif) + Inter (sans body). Two faces only. -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
 
-  <!-- Tailwind via CDN (Play CDN supports arbitrary values + JIT) -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind via CDN (Play CDN supports arbitrary values + JIT).
+       Pinned to a specific version for reproducibility — bumping the version
+       is a deliberate, one-line change rather than a silent auto-upgrade.
+       NOTE: this is the runtime CDN (convenient + editable). For a faster
+       production build, see the "Going to production" note in README.md. -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -467,7 +499,7 @@
             </li>
             <li class="bg-white flex items-center justify-center p-10 min-h-[150px]">
               <img src="assets/partners/geac.png" alt="Global EdTech Acceleration Committee (GEAC)"
-                   width="980" height="504" loading="lazy" decoding="async"
+                   width="360" height="185" loading="lazy" decoding="async"
                    class="max-h-12 max-w-[160px] w-auto object-contain" />
             </li>
           </ul>

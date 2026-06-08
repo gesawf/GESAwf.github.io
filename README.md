@@ -31,23 +31,25 @@ A `.nojekyll` file is included so GitHub Pages serves files verbatim without run
 
 ```
 GESAwf.github.io/
-├── index.html         # the whole site
-├── .nojekyll          # disable Jekyll on GitHub Pages
+├── index.html              # the whole site
+├── .nojekyll               # disable Jekyll on GitHub Pages
+├── CNAME                   # custom domain (gesa.sharptext.org)
 ├── assets/
-│   ├── favicon.svg    # stylized G mark
-│   └── og-image.png   # TODO: generate 1200×630 OG image
+│   ├── favicon.svg         # stylized G mark
+│   ├── og-image.png        # 1200×630 social-share card
+│   └── partners/           # logo wall (aws, mynavi, geac)
+├── tools/
+│   └── generate-og-image.py  # optional: regenerate og-image.png
 └── README.md
 ```
 
-## TODOs before publish
+## Open items
 
-Search `index.html` for `TODO:` to find every one. Current set:
+- Drop a real LinkedIn URL into the footer (currently `#`).
+- Uncomment the Plausible / Fathom analytics snippet once you want analytics (`data-domain` is already set to `gesa.sharptext.org`).
+- Activate the Formspree form: the first real submission triggers a confirmation email to the form owner; click it once to start receiving enquiries.
 
-- Generate `assets/og-image.png` (1200×630) for OG / Twitter card previews.
-- Wire the *Apply* button (currently `#apply-placeholder`) to the live Airtable application URL.
-- Confirm the public-facing contact email used in the sponsor CTA and footer (`workforce-track@globaledtechawards.org` is currently a placeholder).
-- Drop a real LinkedIn URL into the footer.
-- Uncomment the Plausible / Fathom analytics snippet once a domain is registered.
+Done: og-image generated, Apply button wired to Airtable, contact handled by the inline Formspree form (+ `gesa@sharptext.org` fallback).
 
 Source-doc-aligned (no longer TODOs):
 
@@ -68,10 +70,34 @@ The site ships with both a dark theme (the design default) and a light theme, sw
 
 ## Stack notes
 
-- Tailwind via the Play CDN (`https://cdn.tailwindcss.com`). For production you can swap to a built CSS file later — not required for v1.
-- Fonts: Google Fonts (`Fraunces` + `Inter`), two faces, loaded with `display=swap`.
+- Tailwind via the Play CDN, **pinned to `3.4.17`** for reproducibility (`https://cdn.tailwindcss.com/3.4.17`). Bumping the version is a deliberate one-line edit.
+- Fonts: Google Fonts (`Fraunces` + `Inter`), two faces, `display=swap`, with `preconnect` hints. Inter loads weights 400/500 only (600 was unused).
 - Animation: a single `IntersectionObserver` for fade-in reveals + a 1.5s safety-net timeout. Respects `prefers-reduced-motion`. CSS is gated on a `.js` class so the page is never trapped at opacity 0 for no-JS users.
 - FAQ uses native `<details>` / `<summary>` — no JS for that part.
+- Structured data (`application/ld+json`), Open Graph + Twitter cards, canonical URL, and a generated `assets/og-image.png` are all in `<head>`.
+
+## Performance & optimization
+
+Optimizations applied while keeping the file hand-editable (no build step):
+
+- **Images right-sized.** Logos are served near their display size; `geac.png` went from 116 KB (980 px wide) to 28 KB (360 px). All logos lazy-load with explicit `width`/`height` to prevent layout shift.
+- **Fonts trimmed** to only the weights in use; `preconnect` to the font + CDN origins opens connections early.
+- **Pinned Tailwind version** removes a redirect hop and makes builds reproducible.
+- **`og-image.png`** is a real 1200×630 card (regenerate with `tools/generate-og-image.py` if the hero copy changes).
+
+### The one trade-off: Tailwind runtime CDN
+
+The Play CDN ships ~120 KB of JS that generates CSS in the browser at load time. That's the main thing a Lighthouse run will flag — but it's also **what keeps the file editable**: you can add any Tailwind class in `index.html` (or via Cowork) and it just works, no rebuild. Removing it means committing to a build step, which would break that workflow.
+
+If you later decide raw speed matters more than zero-build editing, swap the CDN `<script>` for a prebuilt stylesheet:
+
+```sh
+npx tailwindcss@3.4.17 -i input.css -o assets/tailwind.css --minify
+# then replace the <script src="…cdn.tailwindcss.com/3.4.17"></script>
+# with  <link rel="stylesheet" href="assets/tailwind.css" />
+```
+
+After that, re-run the command whenever you add new utility classes. (Not done here on purpose — editability was the priority.)
 
 ## Sources of truth
 
