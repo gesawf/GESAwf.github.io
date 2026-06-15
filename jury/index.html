@@ -90,6 +90,9 @@
             accent: 'var(--accent)',
             accentHover: 'var(--accent-hover)',
             onAccent: 'var(--on-accent)',
+            /* Jury-only secondary accent, drawn from the charter's ink-blue */
+            navy: 'var(--navy)',
+            navyPanel: 'var(--navy-panel)',
           },
           fontFamily: {
             serif: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
@@ -101,7 +104,9 @@
   </script>
 
   <style>
-    /* ---- Theme tokens (identical to the main site) ---- */
+    /* ---- Theme tokens. Neutrals + orange accent match the main site;
+            the jury page adds a navy secondary accent + navy-tinted panels
+            (its distinguishing signature) drawn from the GESA Jury Charter. ---- */
     :root {
       color-scheme: dark;
       --ink: #0B0C0E;
@@ -114,6 +119,8 @@
       --on-accent: #0B0C0E;
       --nav-bg: rgba(11, 12, 14, 0.85);
       --tl-mid: #2A2D33;
+      --navy: #8FAAD0;            /* steel-blue: readable on the dark bg */
+      --navy-panel: #0D1119;      /* navy-tinted near-black panel */
     }
     html.light {
       color-scheme: light;
@@ -127,6 +134,8 @@
       --on-accent: #FFFFFF;
       --nav-bg: rgba(251, 250, 248, 0.85);
       --tl-mid: #C9C5BC;
+      --navy: #1F3A5F;            /* charter navy: readable on light */
+      --navy-panel: #EEF2F8;      /* cool blue-grey paper */
     }
 
     html { scroll-behavior: smooth; }
@@ -135,6 +144,7 @@
 
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
 
+    /* Hero gradient — warm accent hint (kept from the main site). */
     .hero-gradient {
       background:
         radial-gradient(ellipse 60% 50% at 85% 0%, rgba(229, 89, 52, 0.10) 0%, rgba(229, 89, 52, 0) 60%),
@@ -159,6 +169,9 @@
     }
 
     .hairline { border-color: var(--line); }
+
+    /* Formal "charter" section number — the jury page's structural signature */
+    .sec-num { font-family: 'Fraunces', Georgia, serif; font-variation-settings: "opsz" 40; }
 
     #site-nav { transition: background-color 250ms ease, border-color 250ms ease, backdrop-filter 250ms ease; }
     #site-nav.is-scrolled {
@@ -191,7 +204,6 @@
     @keyframes stroke-in { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
     @media (prefers-reduced-motion: reduce) { .hero-stroke { animation: none; } }
 
-    /* The selected involvement level gets an accent ring */
     .level-card.is-selected { outline: 2px solid var(--accent); outline-offset: -2px; }
   </style>
 </head>
@@ -207,8 +219,7 @@
         <span class="font-serif text-[1.35rem] leading-none text-body">GESA</span>
         <span class="hairline border-l h-5"></span>
         <span class="text-sm text-muted group-hover:text-body transition-colors">Workforce Learning Track</span>
-        <span class="hairline border-l h-5 hidden sm:inline-block"></span>
-        <span class="hidden sm:inline text-sm text-accent">Jury</span>
+        <span class="hidden sm:inline-flex items-center h-5 px-2 ml-1 text-[0.68rem] font-medium tracking-wide uppercase text-navy border border-navy/50 rounded-sm">Jury</span>
       </a>
 
       <nav class="hidden lg:flex items-center gap-8 text-sm text-muted" aria-label="Page sections">
@@ -241,24 +252,30 @@
   <main id="top">
 
     <!-- ============================================================
-         1. Hero  (headline A)
+         Hero  (headline A) — formal charter label + navy framing
          ============================================================ -->
     <section class="hero-gradient relative overflow-hidden">
-      <div class="mx-auto max-w-[1280px] px-6 lg:px-10 pt-40 pb-28 lg:pt-48 lg:pb-40 min-h-[88vh] flex flex-col justify-center">
+      <div class="mx-auto max-w-[1280px] px-6 lg:px-10 pt-36 pb-20 lg:pt-44 lg:pb-24 min-h-[80vh] flex flex-col justify-center">
 
-        <p class="eyebrow text-accent reveal">Jury invitation &nbsp;·&nbsp; 2026 cycle</p>
+        <p class="reveal">
+          <span class="inline-flex items-center gap-3 text-navy">
+            <span class="eyebrow">Jury Charter</span>
+            <span class="h-px w-8 bg-navy" aria-hidden="true"></span>
+            <span class="eyebrow">2026 cycle</span>
+          </span>
+        </p>
 
         <h1 class="display text-body mt-8 text-[2.75rem] sm:text-[4.25rem] lg:text-[6rem] xl:text-[6.75rem] reveal max-w-[15ch]">
           Help decide what the next decade of workforce learning rewards.
         </h1>
 
-        <div class="hero-stroke mt-12 w-[280px] max-w-full reveal" aria-hidden="true"></div>
+        <div class="hero-stroke mt-10 w-[280px] max-w-full reveal" aria-hidden="true"></div>
 
-        <p class="mt-10 max-w-[640px] text-lg lg:text-xl text-muted leading-relaxed reveal">
-          An invitation to join the jury of the GESA Workforce Learning Track - the nonprofit awards program, run by MindCET and Sharptext, that recognizes the startups closing the skills gap.
+        <p class="mt-9 max-w-[640px] text-lg lg:text-xl text-muted leading-relaxed reveal">
+          An invitation to join the jury of the GESA Workforce Learning Track — the nonprofit awards program, run by MindCET and Sharptext, that recognizes the startups closing the skills gap.
         </p>
 
-        <div class="mt-12 flex flex-col sm:flex-row gap-3 sm:gap-4 reveal">
+        <div class="mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4 reveal">
           <a href="#join"
              class="inline-flex items-center justify-center h-12 px-6 text-sm font-medium text-onAccent bg-accent hover:bg-accentHover transition-colors">
             Join the jury
@@ -273,50 +290,75 @@
             <span class="mr-2" aria-hidden="true">←</span> About the track
           </a>
         </div>
+      </div>
 
-        <p class="mt-12 text-xs text-muted reveal">
-          Curated by Sharptext &nbsp;·&nbsp; with MindCET / GESAwards &nbsp;·&nbsp; Finals at BETT London, early 2027
-        </p>
+      <!-- Proof, on the first screen: program scale + the partners who back it -->
+      <div class="border-t border-line bg-navyPanel">
+        <div class="mx-auto max-w-[1280px] px-6 lg:px-10 py-7 flex flex-col lg:flex-row lg:items-center gap-6 lg:gap-10">
+          <p class="text-sm text-body shrink-0 reveal">
+            <span class="text-navy font-medium">8,000+ startups</span> · 130+ countries · since 2014.
+            <span class="text-muted">Run by MindCET &amp; Sharptext, under the Global EdTech Startup Awards.</span>
+          </p>
+          <ul class="flex flex-wrap items-center gap-2.5 lg:ml-auto reveal" aria-label="Past program partners">
+            <li class="bg-white rounded-sm flex items-center justify-center h-11 w-[88px]">
+              <img src="../assets/partners/aws.png" alt="Amazon Web Services" width="250" height="167" loading="lazy" decoding="async" class="max-h-6 max-w-[60px] w-auto object-contain" />
+            </li>
+            <li class="bg-white rounded-sm flex items-center justify-center h-11 w-[88px]">
+              <img src="../assets/partners/hp.png" alt="HP" width="250" height="250" loading="lazy" decoding="async" class="max-h-7 max-w-[44px] w-auto object-contain" />
+            </li>
+            <li class="bg-white rounded-sm flex items-center justify-center h-11 w-[88px]">
+              <img src="../assets/partners/mynavi.png" alt="Mynavi" width="354" height="310" loading="lazy" decoding="async" class="max-h-7 max-w-[64px] w-auto object-contain" />
+            </li>
+            <li class="bg-white rounded-sm flex items-center justify-center h-11 w-[88px]">
+              <img src="../assets/partners/geac.png" alt="Global EdTech Acceleration Committee" width="360" height="185" loading="lazy" decoding="async" class="max-h-6 max-w-[78px] w-auto object-contain" />
+            </li>
+          </ul>
+        </div>
       </div>
     </section>
 
 
     <!-- ============================================================
-         2. What the jury does
+         01 · The role  (what the jury does) + the chair
          ============================================================ -->
     <section id="role" class="border-t border-line">
       <div class="mx-auto max-w-[1280px] px-6 lg:px-10 py-24 lg:py-32">
 
-        <h2 class="display-md text-body text-[2.25rem] sm:text-[3rem] lg:text-[3.75rem] max-w-[820px] reveal">
+        <div class="flex items-center gap-3 reveal">
+          <span class="sec-num text-navy text-lg leading-none">01</span>
+          <span class="h-px w-8 bg-navy" aria-hidden="true"></span>
+          <span class="eyebrow text-navy">The role</span>
+        </div>
+        <h2 class="display-md text-body text-[2.25rem] sm:text-[3rem] lg:text-[3.75rem] mt-6 max-w-[820px] reveal">
           What the jury does.
         </h2>
         <p class="mt-6 max-w-[620px] text-lg text-muted reveal">
-          A clear, finite set of tasks across a single cycle - you take part in the ones that fit your expertise, interest and availability.
+          A clear, finite set of tasks across a single cycle — you take part in the ones that fit.
         </p>
 
-        <div class="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-line border border-line">
+        <div class="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-line border border-line">
           <article class="bg-ink p-8 reveal">
-            <p class="font-serif text-accent text-[2rem] leading-none">01</p>
+            <p class="sec-num text-navy text-[1.75rem] leading-none">01</p>
             <h3 class="font-serif text-xl text-body mt-5">Shape the criteria</h3>
-            <p class="mt-3 text-sm text-muted leading-relaxed">Help define what a strong workforce-learning initiative looks like, and turn that into a clear, fair rubric.</p>
+            <p class="mt-3 text-sm text-muted leading-relaxed">Help define what a strong workforce-learning venture looks like, and turn that into a clear, fair rubric.</p>
           </article>
           <article class="bg-ink p-8 reveal">
-            <p class="font-serif text-accent text-[2rem] leading-none">02</p>
+            <p class="sec-num text-navy text-[1.75rem] leading-none">02</p>
             <h3 class="font-serif text-xl text-body mt-5">Evaluate applicants</h3>
             <p class="mt-3 text-sm text-muted leading-relaxed">Review and score shortlisted entries against the rubric, focusing on your areas of expertise.</p>
           </article>
           <article class="bg-ink p-8 reveal">
-            <p class="font-serif text-accent text-[2rem] leading-none">03</p>
+            <p class="sec-num text-navy text-[1.75rem] leading-none">03</p>
             <h3 class="font-serif text-xl text-body mt-5">Vet the finalists</h3>
             <p class="mt-3 text-sm text-muted leading-relaxed">Take a closer, more considered look at the shortlist before winners are chosen.</p>
           </article>
           <article class="bg-ink p-8 reveal">
-            <p class="font-serif text-accent text-[2rem] leading-none">04</p>
+            <p class="sec-num text-navy text-[1.75rem] leading-none">04</p>
             <h3 class="font-serif text-xl text-body mt-5">Mentor winners</h3>
-            <p class="mt-3 text-sm text-muted leading-relaxed">Offer winners a chance to engage with an experienced voice — guidance and perspective, not a guaranteed outcome.</p>
+            <p class="mt-3 text-sm text-muted leading-relaxed">Share your perspective with a winning team — mentorship on your terms, where it&rsquo;s useful.</p>
           </article>
           <article class="bg-ink p-8 reveal">
-            <p class="font-serif text-accent text-[2rem] leading-none">05</p>
+            <p class="sec-num text-navy text-[1.75rem] leading-none">05</p>
             <h3 class="font-serif text-xl text-body mt-5">Join the bootcamp</h3>
             <p class="mt-3 text-sm text-muted leading-relaxed">Take part in optional sessions with finalists, sharing practical know-how.</p>
           </article>
@@ -324,66 +366,104 @@
             <p class="text-sm text-muted leading-relaxed">The panel is chaired by the Track Curator, who safeguards the criteria and the integrity of the process.</p>
           </article>
         </div>
+
+        <!-- Chaired by — a named human. Swap the LC monogram for a headshot when ready:
+             replace the <span class="…monogram…">LC</span> block with
+             <img src="../assets/lucian.jpg" alt="Lucian Cosinschi" class="h-20 w-20 rounded-full object-cover" /> -->
+        <div class="mt-16 max-w-[820px] reveal">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-6 bg-navyPanel border border-line p-8">
+            <span class="shrink-0 h-20 w-20 rounded-full bg-navy/15 text-navy font-serif text-2xl flex items-center justify-center" aria-hidden="true">LC</span>
+            <div>
+              <p class="eyebrow text-navy">Chaired by</p>
+              <h3 class="font-serif text-2xl text-body mt-2">Lucian Cosinschi</h3>
+              <p class="mt-2 text-sm text-muted leading-relaxed">
+                Track Curator, GESA Workforce Learning Track · founder of Sharptext. Lucian chairs the panel, safeguards the criteria, and keeps the process independent — so the award reflects the field, not any single interest.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
 
     <!-- ============================================================
-         3. Composition  (headline B)
+         02 · The panel  (headline B) + integrity stance
          ============================================================ -->
     <section class="border-t border-line bg-surface">
       <div class="mx-auto max-w-[1280px] px-6 lg:px-10 py-24 lg:py-32">
 
-        <p class="eyebrow text-accent reveal">The panel</p>
+        <div class="flex items-center gap-3 reveal">
+          <span class="sec-num text-navy text-lg leading-none">02</span>
+          <span class="h-px w-8 bg-navy" aria-hidden="true"></span>
+          <span class="eyebrow text-navy">The panel</span>
+        </div>
         <h2 class="display-md text-body text-[2.25rem] sm:text-[3rem] lg:text-[3.75rem] mt-6 max-w-[900px] reveal">
           Closing the skills gap takes more than one kind of expert.
         </h2>
         <p class="mt-6 max-w-[640px] text-lg text-muted reveal">
-          The jury is built to reflect the whole market, not a single corner of it — seasoned voices from across the workforce-learning ecosystem.
+          The jury is built to reflect the whole market, not a single corner of it — seasoned voices from across the workforce-learning ecosystem. The panel is kept deliberately small and balanced across these five backgrounds, so seats in each are limited.
         </p>
 
         <ul class="mt-14 grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-7 max-w-[1000px]">
           <li class="flex gap-4 text-body reveal">
-            <span class="text-accent shrink-0 mt-1" aria-hidden="true">—</span>
+            <span class="text-navy shrink-0 mt-1" aria-hidden="true">—</span>
             <span><span class="text-body">Employers and corporate L&amp;D leaders</span> <span class="text-muted">— the people who buy and deploy learning at scale.</span></span>
           </li>
           <li class="flex gap-4 text-body reveal">
-            <span class="text-accent shrink-0 mt-1" aria-hidden="true">—</span>
+            <span class="text-navy shrink-0 mt-1" aria-hidden="true">—</span>
             <span><span class="text-body">Investors</span> <span class="text-muted">backing workforce and education ventures.</span></span>
           </li>
           <li class="flex gap-4 text-body reveal">
-            <span class="text-accent shrink-0 mt-1" aria-hidden="true">—</span>
+            <span class="text-navy shrink-0 mt-1" aria-hidden="true">—</span>
             <span><span class="text-body">Learning-platform and skills-technology leaders</span> <span class="text-muted">— engaged where they don&rsquo;t compete with applicants under review.</span></span>
           </li>
           <li class="flex gap-4 text-body reveal">
-            <span class="text-accent shrink-0 mt-1" aria-hidden="true">—</span>
+            <span class="text-navy shrink-0 mt-1" aria-hidden="true">—</span>
             <span><span class="text-body">Independent analysts and thought leaders</span> <span class="text-muted">who anchor the panel&rsquo;s credibility.</span></span>
           </li>
           <li class="flex gap-4 text-body reveal">
-            <span class="text-accent shrink-0 mt-1" aria-hidden="true">—</span>
+            <span class="text-navy shrink-0 mt-1" aria-hidden="true">—</span>
             <span><span class="text-body">Mission-driven funders and public-good voices.</span></span>
           </li>
         </ul>
+
+        <!-- Integrity stance — turns the conflict-of-interest question into an asset -->
+        <div class="mt-14 max-w-[760px] border-l-2 border-navy pl-6 reveal">
+          <p class="eyebrow text-navy">On integrity</p>
+          <p class="mt-3 text-base text-muted leading-relaxed">
+            Jurors recuse themselves from any applicant they&rsquo;re connected to. Investor and platform voices join where they don&rsquo;t compete with the ventures under review, and the jury is a forum for judgment — not a channel for deal access. The Curator safeguards the rubric so the result reflects the field.
+          </p>
+        </div>
       </div>
     </section>
 
 
     <!-- ============================================================
-         4. Choose your level of involvement
+         03 · Choose your level of involvement
          ============================================================ -->
     <section id="levels" class="border-t border-line">
       <div class="mx-auto max-w-[1280px] px-6 lg:px-10 py-24 lg:py-32">
 
-        <h2 class="display-md text-body text-[2.25rem] sm:text-[3rem] lg:text-[3.75rem] max-w-[820px] reveal">
+        <div class="flex items-center gap-3 reveal">
+          <span class="sec-num text-navy text-lg leading-none">03</span>
+          <span class="h-px w-8 bg-navy" aria-hidden="true"></span>
+          <span class="eyebrow text-navy">Your involvement</span>
+        </div>
+        <h2 class="display-md text-body text-[2.25rem] sm:text-[3rem] lg:text-[3.75rem] mt-6 max-w-[820px] reveal">
           Choose your level of involvement.
         </h2>
         <p class="mt-6 max-w-[680px] text-lg text-muted reveal">
           Your time is the most important resource. Every role is opt-in and adapts to your constraints — lend your name, or go all the way through to mentoring. Mix and adjust at any point in the cycle.
         </p>
 
-        <div class="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line">
+        <!-- Honest urgency: the rubric is written first -->
+        <p class="mt-6 max-w-[680px] text-base text-body leading-relaxed reveal">
+          <span class="text-navy">The criteria are written first, in summer 2026.</span> Jurors who join now help shape the rubric the rest of the field is judged against — those who join later evaluate within it.
+        </p>
+
+        <div class="mt-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line">
           <article class="level-card bg-ink p-8 flex flex-col reveal" data-level="Lend your name">
-            <p class="eyebrow text-accent">~1 hour</p>
+            <p class="eyebrow text-navy">About 1 hour</p>
             <h3 class="font-serif text-2xl text-body mt-4">Lend your name</h3>
             <p class="mt-4 text-sm text-muted leading-relaxed flex-1">Join the named panel and approve the final selection criteria. Your name and organization appear alongside the other jurors.</p>
             <button type="button" class="level-pick mt-8 inline-flex items-center text-sm text-body border-b border-accent pb-1 hover:text-accent transition-colors self-start">
@@ -392,7 +472,7 @@
           </article>
 
           <article class="level-card bg-ink p-8 flex flex-col reveal" data-level="Evaluate">
-            <p class="eyebrow text-accent">+4–6 hours</p>
+            <p class="eyebrow text-navy">4–6 hours</p>
             <h3 class="font-serif text-2xl text-body mt-4">Evaluate</h3>
             <p class="mt-4 text-sm text-muted leading-relaxed flex-1">Score a round of shortlisted applicants against the shared rubric, in your areas of expertise.</p>
             <button type="button" class="level-pick mt-8 inline-flex items-center text-sm text-body border-b border-accent pb-1 hover:text-accent transition-colors self-start">
@@ -401,7 +481,7 @@
           </article>
 
           <article class="level-card bg-ink p-8 flex flex-col reveal" data-level="Shape">
-            <p class="eyebrow text-accent">+6–10 hours</p>
+            <p class="eyebrow text-navy">6–10 hours</p>
             <h3 class="font-serif text-2xl text-body mt-4">Shape</h3>
             <p class="mt-4 text-sm text-muted leading-relaxed flex-1">Co-create the evaluation rubric and selection criteria, and help vet the finalists.</p>
             <button type="button" class="level-pick mt-8 inline-flex items-center text-sm text-body border-b border-accent pb-1 hover:text-accent transition-colors self-start">
@@ -410,7 +490,7 @@
           </article>
 
           <article class="level-card bg-ink p-8 flex flex-col reveal" data-level="Engage">
-            <p class="eyebrow text-accent">Variable + optional travel</p>
+            <p class="eyebrow text-navy">Variable · optional travel</p>
             <h3 class="font-serif text-2xl text-body mt-4">Engage</h3>
             <p class="mt-4 text-sm text-muted leading-relaxed flex-1">Mentor a winner, join the London bootcamp, and attend the BETT finals.</p>
             <button type="button" class="level-pick mt-8 inline-flex items-center text-sm text-body border-b border-accent pb-1 hover:text-accent transition-colors self-start">
@@ -420,57 +500,62 @@
         </div>
 
         <p class="mt-8 text-sm text-muted reveal">
-          Everything is opt-in — there are no obligations beyond the level you choose. Time estimates are indicative for a single cycle and will be confirmed against the GESA 2026 calendar.
+          Times are indicative, per cycle, for that activity alone — combine levels as you like. Everything is opt-in; there are no obligations beyond the level you choose. Final timings are confirmed against the GESA 2026 calendar.
         </p>
       </div>
     </section>
 
 
     <!-- ============================================================
-         5. The cycle at a glance
+         04 · The cycle at a glance
          ============================================================ -->
-    <section id="timeline" class="border-t border-line">
+    <section id="timeline" class="border-t border-line bg-surface">
       <div class="mx-auto max-w-[1280px] px-6 lg:px-10 py-24 lg:py-32">
 
-        <h2 class="display-md text-body text-[2.25rem] sm:text-[3rem] lg:text-[3.75rem] max-w-[820px] reveal">
+        <div class="flex items-center gap-3 reveal">
+          <span class="sec-num text-navy text-lg leading-none">04</span>
+          <span class="h-px w-8 bg-navy" aria-hidden="true"></span>
+          <span class="eyebrow text-navy">The cycle</span>
+        </div>
+        <h2 class="display-md text-body text-[2.25rem] sm:text-[3rem] lg:text-[3.75rem] mt-6 max-w-[820px] reveal">
           The 2026–27 cycle.
         </h2>
 
-        <div class="mt-16">
+        <div class="mt-14">
           <!-- Desktop: horizontal -->
           <div class="hidden md:block">
             <div class="relative">
               <div class="absolute left-0 right-0 top-[14px] h-px tl-rule" aria-hidden="true"></div>
               <ol class="relative grid grid-cols-5 gap-6">
                 <li class="reveal">
-                  <span class="block w-3.5 h-3.5 rounded-full bg-accent ring-4 ring-ink"></span>
+                  <span class="block w-3.5 h-3.5 rounded-full bg-accent ring-4 ring-surface"></span>
                   <p class="font-serif text-body text-xl mt-8">Summer 2026</p>
                   <p class="mt-3 text-sm text-muted leading-relaxed">Criteria and rubric shaped with the jury.</p>
-                  <p class="mt-2 eyebrow text-accent">Shape</p>
+                  <p class="mt-2 eyebrow text-navy">Shape</p>
                 </li>
                 <li class="reveal">
-                  <span class="block w-3.5 h-3.5 rounded-full bg-body ring-4 ring-ink"></span>
+                  <span class="block w-3.5 h-3.5 rounded-full bg-body ring-4 ring-surface"></span>
                   <p class="font-serif text-body text-xl mt-8">Autumn 2026</p>
                   <p class="mt-3 text-sm text-muted leading-relaxed">Applicants reviewed; a shortlist is scored.</p>
-                  <p class="mt-2 eyebrow text-accent">Evaluate</p>
+                  <p class="mt-2 eyebrow text-navy">Evaluate</p>
                 </li>
                 <li class="reveal">
-                  <span class="block w-3.5 h-3.5 rounded-full bg-body ring-4 ring-ink"></span>
+                  <span class="block w-3.5 h-3.5 rounded-full bg-body ring-4 ring-surface"></span>
                   <p class="font-serif text-body text-xl mt-8">Late 2026</p>
                   <p class="mt-3 text-sm text-muted leading-relaxed">Finalists vetted and selected; semifinal visibility around OEB Berlin.</p>
-                  <p class="mt-2 eyebrow text-accent">Vet</p>
+                  <p class="mt-2 eyebrow text-navy">Vet</p>
                 </li>
                 <li class="reveal">
-                  <span class="block w-3.5 h-3.5 rounded-full bg-body ring-4 ring-ink"></span>
+                  <span class="block w-3.5 h-3.5 rounded-full bg-body ring-4 ring-surface"></span>
                   <p class="font-serif text-body text-xl mt-8">BETT London, early 2027</p>
                   <p class="mt-3 text-sm text-muted leading-relaxed">Finalist showcase; winners announced.</p>
-                  <p class="mt-2 eyebrow text-accent">Attend</p>
+                  <p class="mt-2 eyebrow text-navy">Attend</p>
                 </li>
                 <li class="reveal">
-                  <span class="block w-3.5 h-3.5 rounded-full bg-body ring-4 ring-ink"></span>
+                  <span class="block w-3.5 h-3.5 rounded-full bg-body ring-4 ring-surface"></span>
                   <p class="font-serif text-body text-xl mt-8">Post-finals</p>
                   <p class="mt-3 text-sm text-muted leading-relaxed">Winners engage with mentors and an optional bootcamp.</p>
-                  <p class="mt-2 eyebrow text-accent">Mentor</p>
+                  <p class="mt-2 eyebrow text-navy">Mentor</p>
                 </li>
               </ol>
             </div>
@@ -479,29 +564,29 @@
           <!-- Mobile: vertical -->
           <ol class="md:hidden relative pl-6 border-l border-line space-y-10">
             <li class="reveal relative">
-              <span class="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-accent ring-4 ring-ink"></span>
+              <span class="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-accent ring-4 ring-surface"></span>
               <p class="font-serif text-body text-lg">Summer 2026</p>
-              <p class="mt-2 text-sm text-muted leading-relaxed">Criteria and rubric shaped with the jury. <span class="text-accent">Shape</span></p>
+              <p class="mt-2 text-sm text-muted leading-relaxed">Criteria and rubric shaped with the jury. <span class="text-navy">Shape</span></p>
             </li>
             <li class="reveal relative">
-              <span class="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-body ring-4 ring-ink"></span>
+              <span class="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-body ring-4 ring-surface"></span>
               <p class="font-serif text-body text-lg">Autumn 2026</p>
-              <p class="mt-2 text-sm text-muted leading-relaxed">Applicants reviewed; a shortlist is scored. <span class="text-accent">Evaluate</span></p>
+              <p class="mt-2 text-sm text-muted leading-relaxed">Applicants reviewed; a shortlist is scored. <span class="text-navy">Evaluate</span></p>
             </li>
             <li class="reveal relative">
-              <span class="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-body ring-4 ring-ink"></span>
+              <span class="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-body ring-4 ring-surface"></span>
               <p class="font-serif text-body text-lg">Late 2026</p>
-              <p class="mt-2 text-sm text-muted leading-relaxed">Finalists vetted and selected; semifinal visibility around OEB Berlin. <span class="text-accent">Vet</span></p>
+              <p class="mt-2 text-sm text-muted leading-relaxed">Finalists vetted and selected; semifinal visibility around OEB Berlin. <span class="text-navy">Vet</span></p>
             </li>
             <li class="reveal relative">
-              <span class="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-body ring-4 ring-ink"></span>
+              <span class="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-body ring-4 ring-surface"></span>
               <p class="font-serif text-body text-lg">BETT London, early 2027</p>
-              <p class="mt-2 text-sm text-muted leading-relaxed">Finalist showcase; winners announced. <span class="text-accent">Attend</span></p>
+              <p class="mt-2 text-sm text-muted leading-relaxed">Finalist showcase; winners announced. <span class="text-navy">Attend</span></p>
             </li>
             <li class="reveal relative">
-              <span class="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-body ring-4 ring-ink"></span>
+              <span class="absolute -left-[31px] top-1 w-3 h-3 rounded-full bg-body ring-4 ring-surface"></span>
               <p class="font-serif text-body text-lg">Post-finals</p>
-              <p class="mt-2 text-sm text-muted leading-relaxed">Winners engage with mentors and an optional bootcamp. <span class="text-accent">Mentor</span></p>
+              <p class="mt-2 text-sm text-muted leading-relaxed">Winners engage with mentors and an optional bootcamp. <span class="text-navy">Mentor</span></p>
             </li>
           </ol>
         </div>
@@ -514,30 +599,35 @@
 
 
     <!-- ============================================================
-         6. What you receive
+         05 · What you receive
          ============================================================ -->
-    <section class="border-t border-line bg-surface">
+    <section class="border-t border-line">
       <div class="mx-auto max-w-[1280px] px-6 lg:px-10 py-24 lg:py-32">
 
-        <h2 class="display-md text-body text-[2.25rem] sm:text-[3rem] lg:text-[3.75rem] max-w-[820px] reveal">
+        <div class="flex items-center gap-3 reveal">
+          <span class="sec-num text-navy text-lg leading-none">05</span>
+          <span class="h-px w-8 bg-navy" aria-hidden="true"></span>
+          <span class="eyebrow text-navy">What you receive</span>
+        </div>
+        <h2 class="display-md text-body text-[2.25rem] sm:text-[3rem] lg:text-[3.75rem] mt-6 max-w-[820px] reveal">
           What you receive.
         </h2>
 
-        <div class="mt-14 grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10 max-w-[1000px]">
+        <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10 max-w-[1000px]">
           <div class="reveal">
-            <p class="eyebrow text-accent">Recognition</p>
+            <p class="eyebrow text-navy">Recognition</p>
             <p class="mt-4 text-body text-lg leading-relaxed">A seat on a global, nonprofit awards program — your name and organization on track materials, in line with your level of involvement.</p>
           </div>
           <div class="reveal">
-            <p class="eyebrow text-accent">Pipeline insight</p>
-            <p class="mt-4 text-body text-lg leading-relaxed">An early, structured view of an international pipeline of workforce-learning ventures.</p>
+            <p class="eyebrow text-navy">Field insight</p>
+            <p class="mt-4 text-body text-lg leading-relaxed">A structured read on where workforce learning is heading, drawn from the full applicant pool — the field, not a deal list.</p>
           </div>
           <div class="reveal">
-            <p class="eyebrow text-accent">The room</p>
+            <p class="eyebrow text-navy">The room</p>
             <p class="mt-4 text-body text-lg leading-relaxed">A place alongside a deliberately cross-sector panel — employers, investors, platforms, analysts, and funders.</p>
           </div>
           <div class="reveal">
-            <p class="eyebrow text-accent">Association</p>
+            <p class="eyebrow text-navy">Association</p>
             <p class="mt-4 text-body text-lg leading-relaxed">Standing with a credible, additive program built around lifelong learning and the skills gap.</p>
           </div>
         </div>
@@ -546,83 +636,32 @@
 
 
     <!-- ============================================================
-         7. Credibility — program + partners + (forming) panel
+         06 · Join  (headline C) — term + form (sector + level) + email
          ============================================================ -->
-    <section class="border-t border-line">
+    <section id="join" class="border-t border-line bg-navyPanel">
       <div class="mx-auto max-w-[1280px] px-6 lg:px-10 py-24 lg:py-32">
 
-        <p class="eyebrow text-muted reveal">The program</p>
-        <p class="mt-6 max-w-[760px] text-xl lg:text-2xl text-body font-serif leading-snug reveal">
-          Run by MindCET and Sharptext under the Global EdTech Startup Awards — 8,000+ startups, 130+ countries since 2014.
-        </p>
-
-        <!-- Partner logos (shared with the main site) -->
-        <div class="mt-14 reveal">
-          <p class="eyebrow text-muted">In good company</p>
-          <ul class="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-px bg-line border border-line">
-            <li class="bg-white flex items-center justify-center p-10 min-h-[140px]">
-              <img src="../assets/partners/aws.png" alt="Amazon Web Services" width="250" height="167" loading="lazy" decoding="async" class="max-h-11 max-w-[150px] w-auto object-contain" />
-            </li>
-            <li class="bg-white flex items-center justify-center p-10 min-h-[140px]">
-              <img src="../assets/partners/mynavi.png" alt="Mynavi" width="354" height="310" loading="lazy" decoding="async" class="max-h-11 max-w-[150px] w-auto object-contain" />
-            </li>
-            <li class="bg-white flex items-center justify-center p-10 min-h-[140px]">
-              <img src="../assets/partners/geac.png" alt="Global EdTech Acceleration Committee (GEAC)" width="360" height="185" loading="lazy" decoding="async" class="max-h-11 max-w-[150px] w-auto object-contain" />
-            </li>
-            <li class="bg-white flex items-center justify-center p-10 min-h-[140px]">
-              <img src="../assets/partners/hp.png" alt="HP" width="250" height="250" loading="lazy" decoding="async" class="max-h-11 max-w-[150px] w-auto object-contain" />
-            </li>
-          </ul>
+        <div class="flex items-center gap-3 reveal">
+          <span class="sec-num text-navy text-lg leading-none">06</span>
+          <span class="h-px w-8 bg-navy" aria-hidden="true"></span>
+          <span class="eyebrow text-navy">Join</span>
         </div>
 
-        <!-- =========================================================
-             THE 2026 PANEL — populate as jurors confirm.
-             To add a juror, copy one <li> block inside the <ul> below,
-             swap the name / role / org, and (optionally) a photo.
-             Then delete the "forming" placeholder paragraph.
-             ========================================================= -->
-        <!--
-        <div class="mt-20 reveal">
-          <p class="eyebrow text-muted">The 2026 panel</p>
-          <p class="mt-6 max-w-[620px] text-base text-muted leading-relaxed">
-            The panel is forming. Confirmed jurors will appear here as they join.
-          </p>
-
-          <!--
-          <ul class="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-line border border-line">
-            <li class="bg-ink p-8">
-              <h3 class="font-serif text-xl text-body">Juror Name</h3>
-              <p class="mt-1 text-sm text-accent">Role / Title</p>
-              <p class="mt-3 text-sm text-muted leading-relaxed">Organization</p>
-            </li>
-          </ul>
-          -->
-        </div>
-      </div>
-    </section>
-
-
-    <!-- ============================================================
-         8. Join  (headline C) — term + form + email fallback
-         ============================================================ -->
-    <section id="join" class="border-t border-line bg-surface">
-      <div class="mx-auto max-w-[1280px] px-6 lg:px-10 py-24 lg:py-32">
-        <div class="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-12 lg:gap-24">
+        <div class="mt-6 grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-12 lg:gap-24">
 
           <div>
-            <p class="eyebrow text-accent reveal">Join</p>
-            <h2 class="display-md text-body text-[2.25rem] sm:text-[3rem] lg:text-[3.75rem] mt-6 reveal">
+            <h2 class="display-md text-body text-[2.25rem] sm:text-[3rem] lg:text-[3.5rem] reveal">
               Join the GESA Workforce Learning Track jury.
             </h2>
             <p class="mt-6 max-w-[460px] text-lg text-muted leading-relaxed reveal">
-              The invitation is for the 2026 cycle, renewable by mutual agreement — a clean way to begin, with an open door to continue. Everything is opt-in; there are no obligations beyond the level you choose.
+              We&rsquo;re assembling the 2026 panel now. The invitation is for the 2026 cycle, renewable by mutual agreement — a clean way to begin, with an open door to continue. Everything is opt-in; there are no obligations beyond the level you choose.
             </p>
             <p class="mt-8 text-sm text-muted reveal">
-              Prefer email? Reply to Lucian Cosinschi (Sharptext, Track Curator) — <a href="mailto:gesa@sharptext.org?subject=GESA%20Workforce%20Learning%20Track%20%E2%80%94%20Jury" class="text-body border-b border-line hover:border-accent transition-colors">gesa@sharptext.org</a>
+              Prefer email? Reply to Lucian Cosinschi (Sharptext, Track Curator) — <a href="mailto:gesa.jury@sharptext.org?subject=GESA%20Workforce%20Learning%20Track%20%E2%80%94%20Jury" class="text-body border-b border-line hover:border-accent transition-colors">gesa.jury@sharptext.org</a>
             </p>
           </div>
 
-          <!-- Formspree (shared endpoint with the main site). Works without JS;
+          <!-- Formspree (shared endpoint, form=jury tag). Works without JS;
                the inline script upgrades it to an in-place success message. -->
           <form id="jury-form" action="https://formspree.io/f/xkoagwov" method="POST" class="reveal">
             <input type="hidden" name="_subject" value="GESA Workforce Learning Track — Jury enquiry" />
@@ -648,20 +687,35 @@
                 class="w-full h-12 px-4 bg-transparent border border-line text-body focus:border-accent focus:outline-none transition-colors" />
             </div>
 
-            <div class="mt-5">
-              <label for="jf-level" class="block text-sm text-muted mb-2">Level of involvement</label>
-              <select id="jf-level" name="level"
-                class="w-full h-12 px-4 bg-transparent border border-line text-body focus:border-accent focus:outline-none transition-colors">
-                <option value="Not sure yet">Not sure yet — happy to talk it through</option>
-                <option value="Lend your name">Lend your name (~1 hour)</option>
-                <option value="Evaluate">Evaluate (+4–6 hours)</option>
-                <option value="Shape">Shape (+6–10 hours)</option>
-                <option value="Engage">Engage (mentor / bootcamp / finals)</option>
-              </select>
+            <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <label for="jf-sector" class="block text-sm text-muted mb-2">Which best describes you?</label>
+                <select id="jf-sector" name="sector"
+                  class="w-full h-12 px-4 bg-transparent border border-line text-body focus:border-accent focus:outline-none transition-colors">
+                  <option value="">Select one…</option>
+                  <option value="Employer / corporate L&D leader">Employer / corporate L&amp;D leader</option>
+                  <option value="Investor">Investor</option>
+                  <option value="Learning-platform / skills-tech leader">Learning-platform / skills-tech leader</option>
+                  <option value="Independent analyst / thought leader">Independent analyst / thought leader</option>
+                  <option value="Mission-driven funder / public-good">Mission-driven funder / public-good</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label for="jf-level" class="block text-sm text-muted mb-2">Level of involvement</label>
+                <select id="jf-level" name="level"
+                  class="w-full h-12 px-4 bg-transparent border border-line text-body focus:border-accent focus:outline-none transition-colors">
+                  <option value="Not sure yet">Not sure yet — happy to talk it through</option>
+                  <option value="Lend your name">Lend your name (about 1 hour)</option>
+                  <option value="Evaluate">Evaluate (4–6 hours)</option>
+                  <option value="Shape">Shape (6–10 hours)</option>
+                  <option value="Engage">Engage (mentor / bootcamp / finals)</option>
+                </select>
+              </div>
             </div>
 
             <div class="mt-5">
-              <label for="jf-message" class="block text-sm text-muted mb-2">Message <span class="text-muted/70">(optional)</span></label>
+              <label for="jf-message" class="block text-sm text-muted mb-2">Message <span class="text-muted">(optional)</span></label>
               <textarea id="jf-message" name="message" rows="4"
                 class="w-full px-4 py-3 bg-transparent border border-line text-body focus:border-accent focus:outline-none transition-colors resize-y"></textarea>
             </div>
@@ -669,12 +723,12 @@
             <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
               <button type="submit"
                 class="inline-flex items-center h-12 px-6 text-sm font-medium text-onAccent bg-accent hover:bg-accentHover transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
-                <span class="jf-label">Express interest</span>
+                <span class="jf-label">Join the jury</span>
                 <span class="ml-2" aria-hidden="true">→</span>
               </button>
               <p id="jf-status" class="text-sm text-muted" role="status" aria-live="polite"></p>
             </div>
-            <p class="mt-4 text-xs text-muted">We&rsquo;ll confirm your level of involvement, share the draft criteria, and add you to the panel.</p>
+            <p class="mt-4 text-xs text-muted">No commitment yet — we&rsquo;ll confirm your level of involvement, share the draft criteria, and add you to the panel.</p>
           </form>
 
         </div>
@@ -714,8 +768,8 @@
             <li><a href="mailto:gesa.jury@sharptext.org?subject=GESA%20Workforce%20Learning%20Track%20%E2%80%94%20Jury" class="text-body hover:text-accent transition-colors">gesa.jury@sharptext.org</a></li>
           </ul>
           <p class="mt-8 eyebrow text-muted">Curated by</p>
-          <p class="mt-3 text-sm text-body">Sharptext</p>
-          <p class="mt-1 text-sm text-muted"> with MindCET / GESAwards</p>
+          <p class="mt-3 text-sm text-body">Lucian Cosinschi · Sharptext</p>
+          <p class="mt-1 text-sm text-muted">Track Curator · with MindCET / GESAwards</p>
         </div>
       </div>
 
@@ -778,7 +832,7 @@
         const fail = (msg) => {
           if (status) { status.textContent = msg; status.classList.add('text-accent'); }
           if (submitBtn) submitBtn.disabled = false;
-          if (submitLabel) submitLabel.textContent = 'Express interest';
+          if (submitLabel) submitLabel.textContent = 'Join the jury';
         };
         form.addEventListener('submit', (e) => {
           e.preventDefault();
@@ -791,11 +845,11 @@
                 form.innerHTML = '<p class="text-body text-lg leading-relaxed">Thank you — your interest is noted. We&rsquo;ll be in touch to confirm your level of involvement and share the draft criteria.</p>';
               } else {
                 res.json().then((data) => {
-                  fail(data && data.errors ? data.errors.map((x) => x.message).join(', ') : 'Something went wrong. Please email gesa@sharptext.org.');
-                }).catch(() => fail('Something went wrong. Please email gesa@sharptext.org.'));
+                  fail(data && data.errors ? data.errors.map((x) => x.message).join(', ') : 'Something went wrong. Please email gesa.jury@sharptext.org.');
+                }).catch(() => fail('Something went wrong. Please email gesa.jury@sharptext.org.'));
               }
             })
-            .catch(() => fail('Network error. Please email gesa@sharptext.org.'));
+            .catch(() => fail('Network error. Please email gesa.jury@sharptext.org.'));
         });
       }
 
