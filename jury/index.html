@@ -363,21 +363,23 @@
             <p class="mt-3 text-sm text-muted leading-relaxed">Take part in optional sessions with finalists, sharing practical know-how.</p>
           </article>
           <article class="bg-ink p-8 reveal flex items-end">
-            <p class="text-sm text-muted leading-relaxed">The panel is chaired by the Track Curator, who safeguards the criteria and the integrity of the process.</p>
+            <p class="text-sm text-muted leading-relaxed">The panel is curated by the Track Curator, who safeguards the criteria and the integrity of the process.</p>
           </article>
         </div>
 
-        <!-- Chaired by — a named human. Swap the LC monogram for a headshot when ready:
-             replace the <span class="…monogram…">LC</span> block with
-             <img src="../assets/lucian.jpg" alt="Lucian Cosinschi" class="h-20 w-20 rounded-full object-cover" /> -->
+        <!-- Curated by — Lucian Cosinschi. Photo lives at assets/lucian.jpg.
+             If that file is missing, the "LC" monogram shows automatically (onerror). -->
         <div class="mt-16 max-w-[820px] reveal">
           <div class="flex flex-col sm:flex-row sm:items-center gap-6 bg-navyPanel border border-line p-8">
-            <span class="shrink-0 h-20 w-20 rounded-full bg-navy/15 text-navy font-serif text-2xl flex items-center justify-center" aria-hidden="true">LC</span>
+            <img src="../assets/lucian.jpg" alt="Lucian Cosinschi" width="160" height="160"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                 class="shrink-0 h-20 w-20 rounded-full object-cover" />
+            <span class="shrink-0 h-20 w-20 rounded-full bg-navy/15 text-navy font-serif text-2xl items-center justify-center hidden" aria-hidden="true">LC</span>
             <div>
-              <p class="eyebrow text-navy">Chaired by</p>
+              <p class="eyebrow text-navy">Curated by</p>
               <h3 class="font-serif text-2xl text-body mt-2">Lucian Cosinschi</h3>
               <p class="mt-2 text-sm text-muted leading-relaxed">
-                Track Curator, GESA Workforce Learning Track · founder of Sharptext. Lucian chairs the panel, safeguards the criteria, and keeps the process independent — so the award reflects the field, not any single interest.
+                Track Curator, GESA Workforce Learning Track · founder of Sharptext. Lucian curates the panel, safeguards the criteria, and keeps the process independent — so the award reflects the field, not any single interest.
               </p>
             </div>
           </div>
@@ -433,6 +435,57 @@
           <p class="mt-3 text-base text-muted leading-relaxed">
             Jurors recuse themselves from any applicant they&rsquo;re connected to. Investor and platform voices join where they don&rsquo;t compete with the ventures under review, and the jury is a forum for judgment — not a channel for deal access. The Curator safeguards the rubric so the result reflects the field.
           </p>
+        </div>
+
+        <!-- The 2026 panel — mentors-style profile cards (photo · name · role · bio · LinkedIn).
+             PROFILES BELOW ARE ILLUSTRATIVE EXAMPLES. To list a confirmed juror: copy a
+             <li> card, swap name/role/bio/LinkedIn, and drop a square photo at
+             assets/jury/<name>.jpg — the monogram shows automatically until the photo exists. -->
+        <div class="mt-20 reveal">
+          <p class="eyebrow text-navy">The 2026 panel</p>
+          <p class="mt-4 max-w-[640px] text-base text-muted leading-relaxed">
+            Being confirmed now — the profiles below are illustrative of the voices we&rsquo;re assembling.
+          </p>
+
+          <ul class="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-line border border-line">
+            <li class="bg-ink p-8 flex flex-col">
+              <div class="flex items-center gap-4">
+                <img src="../assets/jury/fernando.jpg" alt="Fernando Valenzuela Migoya" width="120" height="120"
+                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                     class="shrink-0 h-16 w-16 rounded-full object-cover" />
+                <span class="shrink-0 h-16 w-16 rounded-full bg-navy/15 text-navy font-serif text-lg items-center justify-center hidden" aria-hidden="true">FV</span>
+                <div class="min-w-0">
+                  <h3 class="font-serif text-lg text-body leading-tight">Fernando Valenzuela Migoya</h3>
+                  <p class="text-sm text-navy mt-1">Global Digital Education Thought Leader</p>
+                </div>
+              </div>
+              <p class="mt-5 text-sm text-muted leading-relaxed flex-1">Among Latin America&rsquo;s most influential edtech leaders; named EdTech Digest&rsquo;s global visionary of the year, 2022.</p>
+              <a href="https://www.linkedin.com/in/ferval/" target="_blank" rel="noopener"
+                 class="mt-6 inline-flex items-center gap-2 text-sm text-muted hover:text-accent transition-colors self-start" aria-label="Fernando Valenzuela Migoya on LinkedIn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.8 0 0 .78 0 1.74v20.52C0 23.22.8 24 1.77 24h20.45c.97 0 1.78-.78 1.78-1.74V1.74C24 .78 23.19 0 22.22 0z"/></svg>
+                LinkedIn
+              </a>
+            </li>
+
+            <li class="bg-ink p-8 flex flex-col">
+              <div class="flex items-center gap-4">
+                <img src="../assets/jury/shlomy.jpg" alt="Dr. Shlomy Kattan" width="120" height="120"
+                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                     class="shrink-0 h-16 w-16 rounded-full object-cover" />
+                <span class="shrink-0 h-16 w-16 rounded-full bg-navy/15 text-navy font-serif text-lg items-center justify-center hidden" aria-hidden="true">SK</span>
+                <div class="min-w-0">
+                  <h3 class="font-serif text-lg text-body leading-tight">Dr. Shlomy Kattan</h3>
+                  <p class="text-sm text-navy mt-1">Entrepreneur &amp; Investor · Tyton Partners</p>
+                </div>
+              </div>
+              <p class="mt-5 text-sm text-muted leading-relaxed flex-1">Impact investor and social entrepreneur; Director at Tyton Partners, previously with the XPRIZE Foundation.</p>
+              <a href="https://www.linkedin.com/in/shlomykattan/" target="_blank" rel="noopener"
+                 class="mt-6 inline-flex items-center gap-2 text-sm text-muted hover:text-accent transition-colors self-start" aria-label="Dr. Shlomy Kattan on LinkedIn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.8 0 0 .78 0 1.74v20.52C0 23.22.8 24 1.77 24h20.45c.97 0 1.78-.78 1.78-1.74V1.74C24 .78 23.19 0 22.22 0z"/></svg>
+                LinkedIn
+              </a>
+            </li>
+          </ul>
         </div>
       </div>
     </section>
