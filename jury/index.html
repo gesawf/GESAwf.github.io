@@ -734,10 +734,17 @@
               </div>
             </div>
 
-            <div class="mt-5">
-              <label for="jf-org" class="block text-sm text-muted mb-2">Organization</label>
-              <input id="jf-org" name="organization" type="text" autocomplete="organization"
-                class="w-full h-12 px-4 bg-transparent border border-line text-body focus:border-accent focus:outline-none transition-colors" />
+            <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <label for="jf-org" class="block text-sm text-muted mb-2">Organization</label>
+                <input id="jf-org" name="organization" type="text" autocomplete="organization"
+                  class="w-full h-12 px-4 bg-transparent border border-line text-body focus:border-accent focus:outline-none transition-colors" />
+              </div>
+              <div>
+                <label for="jf-linkedin" class="block text-sm text-muted mb-2">LinkedIn <span class="text-muted">(optional)</span></label>
+                <input id="jf-linkedin" name="linkedin" type="text" inputmode="url" autocomplete="url" placeholder="linkedin.com/in/…"
+                  class="w-full h-12 px-4 bg-transparent border border-line text-body placeholder:text-muted/60 focus:border-accent focus:outline-none transition-colors" />
+              </div>
             </div>
 
             <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
