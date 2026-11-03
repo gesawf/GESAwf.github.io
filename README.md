@@ -105,3 +105,31 @@ After that, re-run the command whenever you add new utility classes. (Not done h
 - **GESAwards Workforce Learning Track — Collateral** (Google Doc). Core message, sponsor tier copy, prize language, timeline, partner outreach.
 
 Where the two disagree, the **Collateral doc wins on phrasing**; the **Briefing wins on numbers** and on strategic positioning. (Example: the Collateral uses "world's largest EdTech startup competition" but the Briefing's anti-positioning explicitly says don't claim "largest" — so the site uses the indirect framing "8,000+ startups, 130+ countries since 2014" instead.)
+
+## Private WF27 dashboards (`/p/…`)
+
+Four password-protected dashboards built from the *GESA WF 2027 — Applicant screen & shortlists* workbook, one per audience:
+
+| Audience | What it contains |
+|---|---|
+| Core team (Sharptext) | Everything: all 333 companies, contacts, Airtable IDs, data issues, Israeli-semifinal flag, rubric lab, CSV export |
+| Organisers (MindCET / GESA) | As core, minus contact names and Airtable record IDs |
+| Jury | The 121 ranked companies: scores, ranks, reviewer notes, web check, rubric lab. No contacts, revenue, data issues or Israeli flag |
+| Partners & sponsors | Pipeline statistics plus the companies on all three shortlists that the web check *Confirmed*, with employer/investor lens scores only |
+
+**How it is protected.** This repo is public, so the data is never committed in readable form. Each audience's data is trimmed *before* encryption and written as `p/<slug>/data.enc` (AES-256-GCM, key from PBKDF2-SHA256 with 600k iterations). The browser decrypts it only after the right password is entered, so a jury password cannot open core data: those fields are not in the jury file at all. The four folders have random names, are never linked from the site or from each other, carry `noindex/noarchive/nosnippet` meta tags, have no analytics, and are disallowed for all crawlers (including AI crawlers) in `robots.txt`.
+
+Limits worth knowing: anyone with the link *and* the password can read that audience's data, and anyone could save the encrypted file and try to guess the password offline, which is why the passwords are long and random. To revoke access, change that audience's password (below) and rebuild.
+
+**Refresh after re-scoring:**
+
+1. Google Sheets → File → Download → Microsoft Excel (.xlsx).
+2. `pip install openpyxl cryptography` (once).
+3. `python3 tools/wf27/build.py ~/Downloads/<file>.xlsx`
+4. Commit the changed `p/` files and push.
+
+The script recomputes every rank with the sheet's own formula and **stops if any rank disagrees with the sheet**, so the dashboards cannot drift from it. Links and passwords stay the same across refreshes.
+
+**Passwords and links** are kept in `~/.config/gesa-wf27/secrets.json`, outside the repo; it is created on first run. To change a password, edit it there and rebuild. To change a link, delete that audience's entry and rebuild (a new slug and password are generated, and the old folder is removed). Never commit the workbook or the secrets file; `.gitignore` blocks `*.xlsx`, `*.csv` and `secrets*.json`.
+
+**Who sees what** is set in `tools/wf27/build.py` (`SCORED_FIELDS`, `PIPELINE_FIELDS`, `SPONSOR_*`); the page itself is `tools/wf27/template.html`. Preview locally with `python3 -m http.server 8000` and open `http://localhost:8000/p/<slug>/`. The page has to be served over http(s) rather than opened as a file, because it fetches `data.enc`.
