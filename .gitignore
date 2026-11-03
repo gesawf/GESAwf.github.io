@@ -1,1 +1,7 @@
 .DS_Store
+
+# WF27 dashboards: never commit source data or secrets
+*.xlsx
+*.csv
+secrets*.json
+tools/wf27/plain/

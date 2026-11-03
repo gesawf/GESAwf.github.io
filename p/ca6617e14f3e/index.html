@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<!-- Private dashboard. Keep out of every index, archive, snippet, translation and AI corpus. -->
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate, noai, noimageai" />
+<meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+<meta name="bingbot" content="noindex, nofollow, noarchive, nosnippet" />
+<meta name="referrer" content="no-referrer" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data:; connect-src 'self'; base-uri 'none'; form-action 'none'" />
+<meta name="color-scheme" content="dark light" />
+<title>Private dashboard</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B0C0E'/%3E%3Ccircle cx='16' cy='16' r='6' fill='none' stroke='%23E55934' stroke-width='3'/%3E%3C/svg%3E" />
+<script>
+  (function () { try {
+    var saved = localStorage.getItem('theme');
+    var light = saved ? saved === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+    if (light) document.documentElement.classList.add('light');
+  } catch (e) {} })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* Tokens mirror gesa.sharptext.org (dark default, html.light override). */
+  :root {
+    color-scheme: dark;
+    --ink: #0B0C0E; --body: #E8E8EA; --muted: #9CA0A6; --line: #1E2024; --line2: #2A2D33;
+    --surface: #0E0F12; --surface2: #14161A; --accent: #E55934; --accent-hover: #F26A45; --on-accent: #0B0C0E;
+    --nav-bg: rgba(11,12,14,.88); --shadow: 0 20px 60px rgba(0,0,0,.55);
+    --good: #0ca30c; --warn: #fab219; --bad: #d03b3b;
+    --l1: #3987e5; --l2: #d95926; --l3: #199e70; --l4: #c98500; --l5: #d55181;
+  }
+  html.light {
+    color-scheme: light;
+    --ink: #FBFAF8; --body: #1A1B1E; --muted: #5C6066; --line: #E6E3DD; --line2: #D6D2C9;
+    --surface: #F3F1EB; --surface2: #ECE9E1; --accent: #C5471D; --accent-hover: #A93C18; --on-accent: #FFFFFF;
+    --nav-bg: rgba(251,250,248,.9); --shadow: 0 20px 60px rgba(0,0,0,.14);
+    --good: #0b7d0b; --warn: #a86f00; --bad: #c03030;
+    --l1: #2a78d6; --l2: #eb6834; --l3: #1baf7a; --l4: #eda100; --l5: #e87ba4;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--ink); color: var(--body); }
+  body { font: 15px/1.5 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+  h1, h2, h3 { font-family: Fraunces, Georgia, serif; font-weight: 500; letter-spacing: -.01em; margin: 0; }
+  a { color: var(--accent); text-underline-offset: 3px; }
+  a:hover { color: var(--accent-hover); }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  .num { font-variant-numeric: tabular-nums; }
+  .hidden { display: none !important; }
+
+  /* ---------- lock screen */
+  #lock { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+  #lock .card { width: 100%; max-width: 400px; }
+  .mark { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line2); display: grid; place-items: center; }
+  .mark i { width: 14px; height: 14px; border-radius: 50%; border: 3px solid var(--accent); display: block; }
+  #lock h1 { font-size: 28px; margin: 20px 0 6px; }
+  #lock form { margin-top: 24px; display: grid; gap: 12px; }
+  .field { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line2); background: var(--surface); outline: none; }
+  .field:focus { border-color: var(--accent); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--line2); background: transparent; cursor: pointer; white-space: nowrap; }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 500; }
+  .btn.primary:hover { background: var(--accent-hover); }
+  .btn.sm { padding: 6px 12px; font-size: 13px; }
+  .btn[disabled] { opacity: .6; cursor: progress; }
+  .err { color: var(--bad); min-height: 1.5em; font-size: 14px; }
+
+  /* ---------- app chrome */
+  header.top { position: sticky; top: 0; z-index: 30; background: var(--nav-bg); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .bar { max-width: 1320px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 14px; }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .brand b { font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: 17px; white-space: nowrap; }
+  .pill { font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line2); color: var(--muted); white-space: nowrap; }
+  .pill.accent { border-color: color-mix(in srgb, var(--accent) 55%, transparent); color: var(--accent); }
+  .spacer { flex: 1; }
+  .iconbtn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line2); background: transparent; cursor: pointer; display: grid; place-items: center; }
+  .iconbtn svg { width: 17px; height: 17px; }
+  nav.tabs { max-width: 1320px; margin: 0 auto; padding: 0 16px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+  nav.tabs::-webkit-scrollbar { display: none; }
+  nav.tabs button { background: none; border: 0; padding: 10px 12px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; }
+  nav.tabs button[aria-selected="true"] { color: var(--body); border-bottom-color: var(--accent); }
+  main { max-width: 1320px; margin: 0 auto; padding: 28px 16px 80px; }
+  .pagehead { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 24px; margin-bottom: 22px; }
+  .pagehead h2 { font-size: clamp(24px, 3vw, 32px); }
+  .pagehead p { margin: 6px 0 0; max-width: 760px; }
+  .custom-flag { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); background: color-mix(in srgb, var(--accent) 8%, transparent); margin-bottom: 20px; font-size: 14px; }
+
+  .grid { display: grid; gap: 16px; }
+  .kpis { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); margin-bottom: 24px; }
+  .kpi { border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; background: var(--surface); }
+  .kpi .v { font-family: Fraunces, Georgia, serif; font-size: 30px; line-height: 1.1; }
+  .kpi .l { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .kpi.live .v { color: var(--accent); }
+  .charts { grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); }
+  .card { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); padding: 18px; min-width: 0; }
+  .card.wide { grid-column: 1 / -1; }
+  .card h3 { font-size: 18px; }
+  .cardhead { display: flex; gap: 12px; align-items: start; justify-content: space-between; margin-bottom: 12px; }
+  .cardhead p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+  .linkbtn { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; padding: 2px 0; white-space: nowrap; }
+  .linkbtn:hover { color: var(--body); }
+
+  /* hbar */
+  .hbars { display: grid; gap: 2px; }
+  .hrow { display: grid; grid-template-columns: minmax(90px, 38%) 1fr auto; align-items: center; gap: 10px; padding: 3px 0; border-radius: 6px; }
+  .hrow:hover { background: color-mix(in srgb, var(--body) 5%, transparent); }
+  .hrow .lab { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hrow .track { height: 10px; position: relative; }
+  .hrow .fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 0 4px 4px 0; min-width: 2px; }
+  .hrow .val { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 2.5em; text-align: right; }
+  svg.weekly { width: 100%; height: auto; display: block; }
+  svg.weekly .b { fill: var(--accent); }
+  svg.weekly .hit:hover + .b, svg.weekly .b:hover { fill: var(--accent-hover); }
+  svg.weekly text { fill: var(--muted); font-size: 11px; font-family: Inter, system-ui, sans-serif; }
+  svg.weekly .grid line { stroke: var(--line); }
+  svg.weekly .base { stroke: var(--line2); }
+  svg.weekly .marker { stroke: var(--body); stroke-width: 1; }
+
+  /* tables */
+  .tablewrap { overflow: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); max-height: 72vh; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th { position: sticky; top: 0; background: var(--surface2); z-index: 2; font-weight: 500; color: var(--muted); font-size: 12px; white-space: nowrap; }
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { color: var(--body); }
+  th.sorted { color: var(--body); }
+  tbody tr.click { cursor: pointer; }
+  tbody tr.click:hover td { background: color-mix(in srgb, var(--body) 4%, transparent); }
+  td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+  td.c, th.c { text-align: center; font-variant-numeric: tabular-nums; }
+  td.name { font-weight: 500; min-width: 160px; }
+  td.wrap { min-width: 260px; max-width: 420px; }
+  .heat { width: 30px; text-align: center; font-variant-numeric: tabular-nums; border-radius: 5px; padding: 2px 0; }
+  table.plain td, table.plain th { padding: 7px 10px; }
+  .simple-table { max-height: none; }
+
+  /* chips */
+  .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; line-height: 1; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--line2); color: var(--muted); white-space: nowrap; vertical-align: middle; }
+  .chip i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; background: currentColor; }
+  .chip.good { color: var(--good); border-color: color-mix(in srgb, var(--good) 45%, transparent); }
+  .chip.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); }
+  .chip.bad { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); }
+  .chip.accent { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+  .dots { display: inline-flex; gap: 3px; vertical-align: middle; }
+  .dots i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--muted); }
+  .dots i.on { background: var(--accent); border-color: var(--accent); }
+  .delta { font-size: 11.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .delta.up { color: var(--good); } .delta.down { color: var(--bad); } .delta.new { color: var(--accent); }
+
+  /* filters */
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+  .filters .field { width: auto; max-width: 100%; min-width: 0; padding: 8px 12px; border-radius: 999px; font-size: 14px; }
+  .filters input.field { min-width: min(220px, 100%); flex: 1 1 220px; max-width: 360px; }
+  .filters select.field { padding-right: 28px; }
+  .seg { display: inline-flex; border: 1px solid var(--line2); border-radius: 999px; padding: 3px; gap: 2px; }
+  .seg button { border: 0; background: none; padding: 6px 12px; border-radius: 999px; cursor: pointer; font-size: 13px; color: var(--muted); }
+  .seg button[aria-pressed="true"] { background: var(--body); color: var(--ink); }
+  .count { font-size: 13px; color: var(--muted); margin-left: auto; }
+
+  /* shortlists */
+  .sl3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 1000px) { .sl3 { grid-template-columns: 1fr; } }
+  .slist { list-style: none; margin: 0; padding: 0; }
+  .slist li { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: center; padding: 8px 6px; border-top: 1px solid var(--line); cursor: pointer; border-radius: 6px; }
+  .slist li:hover { background: color-mix(in srgb, var(--body) 4%, transparent); }
+  .slist .rk { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; text-align: right; }
+  .slist .nm { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .slist .sub { font-size: 12px; color: var(--muted); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 2px; }
+  .slist .sc { font-variant-numeric: tabular-nums; text-align: right; }
+  .q { font-size: 13px; color: var(--muted); margin: 4px 0 10px; }
+
+  /* lab */
+  .lab-grid { grid-template-columns: 320px minmax(0, 1fr); align-items: start; }
+  @media (max-width: 1000px) { .lab-grid { grid-template-columns: 1fr; } }
+  .setting { display: grid; gap: 6px; margin-bottom: 18px; }
+  .setting label { font-size: 13px; color: var(--muted); }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  input.w { width: 64px; padding: 5px 6px; border-radius: 7px; border: 1px solid var(--line2); background: var(--ink); text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; }
+  input.w.zero { color: var(--muted); }
+  input.w.changed { border-color: var(--accent); }
+  tr.group td { background: var(--surface2); font-weight: 500; font-size: 12.5px; }
+  .warnline { color: var(--warn); font-size: 13px; }
+  .movers { grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+  .movers ul { margin: 6px 0 0; padding-left: 18px; font-size: 13.5px; }
+
+  /* drawer */
+  #scrim { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 40; }
+  #drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(620px, 100vw); background: var(--ink); border-left: 1px solid var(--line); z-index: 41; overflow-y: auto; box-shadow: var(--shadow); padding: 22px 22px 60px; }
+  #drawer h2 { font-size: 28px; margin-right: 44px; }
+  #drawer .close { position: absolute; top: 18px; right: 18px; }
+  .meta-line { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-top: 8px; color: var(--muted); font-size: 14px; }
+  .sec { margin-top: 26px; }
+  .sec > h3 { font-size: 17px; margin-bottom: 10px; }
+  .crit { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .crit .n { font-weight: 500; font-size: 14px; }
+  .crit .a { grid-column: 1 / -1; font-size: 13px; color: var(--muted); }
+  .pips { display: inline-flex; gap: 3px; align-items: center; }
+  .pips i { width: 16px; height: 8px; border-radius: 2px; background: var(--line2); }
+  .pips i.on { background: var(--accent); }
+  .pips b { margin-left: 6px; font-variant-numeric: tabular-nums; font-weight: 500; font-size: 13px; }
+  .rub { display: grid; grid-template-columns: 1fr auto auto; gap: 4px 14px; align-items: baseline; padding: 8px 0; border-top: 1px solid var(--line); }
+  .stack { display: flex; height: 12px; gap: 2px; margin: 10px 0 8px; }
+  .stack span { display: block; height: 100%; }
+  .stack span:first-child { border-radius: 4px 0 0 4px; }
+  .stack span:last-child { border-radius: 0 4px 4px 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  dl.facts { display: grid; grid-template-columns: 150px 1fr; gap: 8px 14px; margin: 0; font-size: 14px; }
+  dl.facts dt { color: var(--muted); }
+  dl.facts dd { margin: 0; overflow-wrap: anywhere; }
+  @media (max-width: 520px) { dl.facts { grid-template-columns: 1fr; gap: 2px; } dl.facts dd { margin-bottom: 8px; } }
+  blockquote { margin: 0; padding: 10px 14px; border-left: 2px solid var(--accent); background: var(--surface); border-radius: 0 10px 10px 0; }
+
+  /* highlights */
+  .hl { grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+  .meter { display: grid; grid-template-columns: 110px 1fr 54px; gap: 10px; align-items: center; font-size: 13px; margin-top: 8px; }
+  .meter .t { height: 8px; background: var(--line2); border-radius: 4px; overflow: hidden; }
+  .meter .t span { display: block; height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; }
+
+  /* method */
+  .prose p, .prose li { max-width: 820px; }
+  .prose ul { padding-left: 20px; }
+  .anchors td { min-width: 150px; font-size: 13px; }
+  .anchors td:first-child { min-width: 170px; }
+
+  #tip { position: fixed; z-index: 60; pointer-events: none; background: var(--body); color: var(--ink); font-size: 12.5px; padding: 6px 9px; border-radius: 7px; max-width: 260px; box-shadow: var(--shadow); }
+  footer.foot { max-width: 1320px; margin: 0 auto; padding: 0 16px 40px; font-size: 12.5px; color: var(--muted); }
+  @media (max-width: 640px) {
+    .brand .pill { display: none; }
+    .brand b { font-size: 15px; }
+    .kpi .v { font-size: 26px; }
+    #drawer { padding: 18px 16px 60px; }
+  }
+  @media print { header.top, .filters, #drawer, #scrim { display: none !important; } .tablewrap { max-height: none; } }
+</style>
+</head>
+<body>
+<noscript><p style="padding:24px">This private dashboard needs JavaScript to decrypt its data.</p></noscript>
+
+<section id="lock" aria-labelledby="lock-title">
+  <div class="card" style="border:0;background:none;padding:0">
+    <div class="mark" aria-hidden="true"><i></i></div>
+    <h1 id="lock-title">Private dashboard</h1>
+    <p class="muted" style="margin:0">Enter the password you were given. The data on this page is encrypted and only unlocks in your browser.</p>
+    <form id="lock-form" autocomplete="off">
+      <label for="pw" class="small muted">Password</label>
+      <input id="pw" class="field" type="password" autocomplete="current-password" required autofocus spellcheck="false" />
+      <button class="btn primary" type="submit" id="unlock">Unlock</button>
+      <div class="err" id="lock-err" role="alert"></div>
+    </form>
+    <p class="small muted" style="margin-top:28px">Confidential. Do not forward the link or the password.</p>
+  </div>
+</section>
+
+<div id="app" class="hidden">
+  <header class="top">
+    <div class="bar">
+      <div class="brand"><div class="mark" aria-hidden="true" style="width:30px;height:30px;border-radius:8px"><i style="width:11px;height:11px;border-width:2.5px"></i></div>
+        <b>GESA Workforce · WF27</b><span class="pill accent" id="aud"></span></div>
+      <div class="spacer"></div>
+      <button class="iconbtn" id="theme" type="button" aria-label="Switch light/dark theme" title="Switch theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+      <button class="btn sm" id="lockbtn" type="button" title="Lock and forget the key in this tab">Lock</button>
+    </div>
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Sections"></nav>
+  </header>
+  <main id="view" tabindex="-1"></main>
+  <footer class="foot" id="foot"></footer>
+</div>
+
+<div id="scrim" class="hidden"></div>
+<aside id="drawer" class="hidden" role="dialog" aria-modal="true" aria-labelledby="dr-title"></aside>
+<div id="tip" class="hidden" role="tooltip"></div>
+
+<script>
+(() => {
+'use strict';
+/* =====================================================================
+   Unlock
+   data.enc = {v, kdf, iter, salt, iv, aad, ct} — AES-256-GCM over gzip(JSON),
+   key = PBKDF2-SHA256(password, salt, iter). Same scheme as tools/wf27/build.py.
+   ===================================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const te = new TextEncoder();
+const b64d = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const b64e = u => btoa(String.fromCharCode(...u));
+const parts = location.pathname.split('/').filter(Boolean);
+if (parts.length && /\.html?$/.test(parts[parts.length - 1])) parts.pop();
+const SLUG = parts[parts.length - 1] || 'local';
+const SKEY = 'wf27:' + SLUG;
+const store = {
+  get(k, s = sessionStorage) { try { return s.getItem(k); } catch (e) { return null; } },
+  set(k, v, s = sessionStorage) { try { s.setItem(k, v); } catch (e) {} },
+  del(k, s = sessionStorage) { try { s.removeItem(k); } catch (e) {} },
+};
+let ENV = null;
+
+async function loadEnvelope() {
+  if (ENV) return ENV;
+  const r = await fetch('data.enc', { cache: 'no-store' });
+  if (!r.ok) throw new Error('Could not load the data file (' + r.status + ').');
+  ENV = await r.json();
+  return ENV;
+}
+async function deriveRaw(pw, env) {
+  const base = await crypto.subtle.importKey('raw', te.encode(pw), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: b64d(env.salt), iterations: env.iter }, base, 256);
+  return new Uint8Array(bits);
+}
+async function decryptWith(raw, env) {
+  const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64d(env.iv), additionalData: te.encode(env.aad || '') }, key, b64d(env.ct));
+  const stream = new Blob([pt]).stream().pipeThrough(new DecompressionStream('gzip'));
+  return JSON.parse(await new Response(stream).text());
+}
+async function tryResume() {
+  const k = store.get(SKEY + ':k');
+  if (!k) return false;
+  try { const env = await loadEnvelope(); start(await decryptWith(b64d(k), env)); return true; }
+  catch (e) { store.del(SKEY + ':k'); return false; }
+}
+$('#lock-form').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const btn = $('#unlock'), err = $('#lock-err'), pw = $('#pw').value;
+  err.textContent = '';
+  if (!window.crypto || !crypto.subtle || typeof DecompressionStream === 'undefined') {
+    err.textContent = 'This browser cannot decrypt the page. Use a current Chrome, Edge, Safari or Firefox over https.';
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'Unlocking…';
+  try {
+    const env = await loadEnvelope();
+    const raw = await deriveRaw(pw, env);
+    const data = await decryptWith(raw, env);
+    store.set(SKEY + ':k', b64e(raw));
+    $('#pw').value = '';
+    start(data);
+  } catch (e) {
+    await new Promise(r => setTimeout(r, 600));
+    err.textContent = (e && e.name === 'OperationError') ? 'That password did not work.' : (e.message || 'Something went wrong.');
+    btn.disabled = false; btn.textContent = 'Unlock';
+    $('#pw').select();
+  }
+});
+$('#lockbtn').addEventListener('click', () => { store.del(SKEY + ':k'); location.reload(); });
+$('#theme').addEventListener('click', () => {
+  const light = document.documentElement.classList.toggle('light');
+  store.set('theme', light ? 'light' : 'dark', localStorage);
+});
+
+/* =====================================================================
+   App
+   ===================================================================== */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = (n, d = 1) => (n == null || isNaN(n)) ? '–' : Number(n).toFixed(d).replace(/\.0+$/, '');
+const usd = n => n == null ? '–' : '$' + Math.round(n).toLocaleString('en-US');
+const RK = ['R1', 'R2', 'R3'];
+let D, F, S, C, BASE, byId = {}, pById = {};
+
+function start(data) {
+  D = data; F = D.features || {};
+  document.title = 'WF27 · ' + D.meta.label;
+  $('#aud').textContent = D.meta.label;
+  $('#lock').classList.add('hidden');
+  $('#app').classList.remove('hidden');
+  $('#foot').innerHTML = `Confidential · ${esc(D.meta.label)} view · data generated ${esc(D.meta.generated)} · ${esc(D.meta.source)}`;
+  C = D.criteria;
+  (D.companies || []).forEach(c => byId[c.id] = c);
+  (D.pipeline || []).forEach(p => pById[p.id] = p);
+  S = defaults();
+  if (D.companies) {
+    compute(S);
+    BASE = {};
+    D.companies.forEach(c => BASE[c.id] = { ...c.$.rank, lists: c.$.lists });
+    const saved = store.get(SKEY + ':settings', localStorage);
+    if (saved && F.reweight) { try { Object.assign(S, JSON.parse(saved)); clampState(); } catch (e) {} }
+    compute(S);
+  }
+  buildTabs();
+  const want = (location.hash || '').slice(1);
+  show(TABS.some(t => t.id === want) ? want : TABS[0].id);
+  window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (h && h !== S.tab && TABS.some(t => t.id === h)) show(h); });
+  initTip();
+}
+
+function defaultWeights() {
+  const w = {};
+  RK.forEach(r => { if (D.rubrics[r] && D.rubrics[r].rows[0].w) w[r] = D.rubrics[r].rows.map(x => x.w.slice()); });
+  return w;
+}
+function defaults() {
+  const st = D.settings || {};
+  return { w: D.companies ? defaultWeights() : {}, gate: st.gate ?? 3, len: st.length ?? 30, lateMode: 'include', tab: null,
+    ex: { q: '', region: '', wc: '', lists: '', late: '', ranked: 'ranked', il: '', sort: 'R1', dir: 1 },
+    pl: { q: '', region: '', track: '', scored: '', late: '', stage: '', issue: '', il: '', sort: 'name', dir: 1 },
+    slView: 'side' };
+}
+function clampState() {
+  const dw = defaultWeights();
+  RK.forEach(r => { if (!S.w[r] || S.w[r].length !== dw[r].length || S.w[r].some((row, i) => row.length !== dw[r][i].length)) S.w[r] = dw[r]; });
+  S.gate = Math.max(F.gateMin ?? 0, Math.min(4, +S.gate || 0));
+  S.len = Math.max(10, Math.min(50, +S.len || 30));
+}
+function persist() {
+  if (!F.reweight) return;
+  store.set(SKEY + ':settings', JSON.stringify({ w: S.w, gate: S.gate, len: S.len, lateMode: S.lateMode }), localStorage);
+}
+function isCustom() {
+  const st = D.settings, dw = defaultWeights();
+  return S.gate !== st.gate || S.len !== st.length || S.lateMode !== 'include' ||
+    RK.some(r => S.w[r].some((row, i) => row.some((v, j) => Math.abs(v - dw[r][i][j]) > 1e-9)));
+}
+
+/* Mirrors the workbook exactly:
+   score = Σ weight × criterion / 4
+   key   = score + change/100 + traction/1000 + (1000 − sheet row)/1e7     (tie-break)
+   rank  = 1 + number of ranked companies with a strictly larger key
+   ranked = Workforce fit ≥ gate (and, optionally, not a late entry) */
+const CI = k => C.findIndex(c => c.key === k);
+function compute(st) {
+  const iFit = CI('fit'), iCh = CI('change'), iTr = CI('traction');
+  const dot = (w, s) => w.reduce((a, wi, i) => a + wi * s[i], 0) / 4;
+  const list = D.companies;
+  list.forEach(c => {
+    const lens = st.w.R1.map(w => dot(w, c.s));
+    const sc = { R1: lens.reduce((a, b) => a + b, 0), R2: dot(st.w.R2[0], c.s), R3: dot(st.w.R3[0], c.s) };
+    const ranked = c.s[iFit] >= st.gate && !(st.lateMode === 'exclude' && c.late);
+    const key = {};
+    RK.forEach(r => key[r] = ranked ? sc[r] + c.s[iCh] / 100 + c.s[iTr] / 1000 + (1000 - c.row) / 1e7 : -1);
+    c.$ = { lens, sc, ranked, key, rank: {}, lists: 0 };
+  });
+  const ranked = list.filter(c => c.$.ranked);
+  RK.forEach(r => {
+    const keys = ranked.map(c => c.$.key[r]).sort((a, b) => b - a);
+    list.forEach(c => {
+      if (!c.$.ranked) { c.$.rank[r] = null; return; }
+      let lo = 0, hi = keys.length; const k = c.$.key[r];
+      while (lo < hi) { const m = (lo + hi) >> 1; if (keys[m] > k) lo = m + 1; else hi = m; }
+      c.$.rank[r] = lo + 1;
+    });
+  });
+  list.forEach(c => c.$.lists = RK.filter(r => c.$.rank[r] != null && c.$.rank[r] <= st.len).length);
+  S.nRanked = ranked.length;
+}
+const maxScore = r => S.w[r].reduce((a, row) => a + row.reduce((x, y) => x + y, 0), 0);
+
+/* ---------- tabs */
+let TABS = [];
+function buildTabs() {
+  TABS = [{ id: 'overview', label: 'Overview' }];
+  if (F.highlights) TABS.push({ id: 'highlights', label: 'Highlighted companies' });
+  if (F.shortlists) TABS.push({ id: 'shortlists', label: 'Shortlists & overlap' });
+  if (F.explorer) TABS.push({ id: 'explorer', label: 'All scores' });
+  if (F.reweight) TABS.push({ id: 'lab', label: 'Rubric lab' });
+  if (F.pipeline) TABS.push({ id: 'pipeline', label: 'Pipeline' });
+  if (F.quality) TABS.push({ id: 'quality', label: 'Data quality' });
+  TABS.push({ id: 'method', label: 'Method' });
+  $('#tabs').innerHTML = TABS.map(t => `<button role="tab" data-tab="${t.id}" aria-selected="false">${esc(t.label)}</button>`).join('');
+  $('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) show(b.dataset.tab); });
+}
+const VIEWS = {};
+function show(id) {
+  S.tab = id;
+  $$('#tabs [data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === id ? 'true' : 'false'));
+  if (location.hash.slice(1) !== id) history.replaceState(null, '', '#' + id);
+  render();
+  window.scrollTo(0, 0);
+}
+function render() { $('#view').innerHTML = ''; VIEWS[S.tab]($('#view')); }
+
+function customFlag() {
+  if (!F.reweight || !isCustom()) return '';
+  const bits = [];
+  if (S.gate !== D.settings.gate) bits.push(`fit gate ≥ ${S.gate}`);
+  if (S.len !== D.settings.length) bits.push(`top ${S.len}`);
+  if (S.lateMode === 'exclude') bits.push('late entries excluded');
+  if (RK.some(r => JSON.stringify(S.w[r]) !== JSON.stringify(defaultWeights()[r]))) bits.push('custom weights');
+  return `<div class="custom-flag"><span class="chip accent"><i></i>What-if</span><span>Showing your settings (${esc(bits.join(', '))}), not the sheet's.</span>
+    <span class="spacer"></span><button class="btn sm" data-act="reset">Reset to sheet</button>${S.tab !== 'lab' ? '<button class="btn sm" data-act="golab">Open rubric lab</button>' : ''}</div>`;
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-act]');
+  if (!a) return;
+  if (a.dataset.act === 'reset') { const t = S.tab; const keep = { ex: S.ex, pl: S.pl, slView: S.slView }; S = { ...defaults(), ...keep, tab: t }; compute(S); persist(); render(); }
+  if (a.dataset.act === 'golab') show('lab');
+  if (a.dataset.act === 'open') openCompany(a.dataset.id);
+  if (a.dataset.act === 'toggle-table') { const card = a.closest('.card'); card.classList.toggle('as-table'); $('.chart-body', card).classList.toggle('hidden'); $('.chart-table', card).classList.toggle('hidden'); a.textContent = card.classList.contains('as-table') ? 'Show chart' : 'Show table'; }
+});
+
+/* ---------- small renderers */
+function wcChip(wc) {
+  if (!wc || wc.startsWith('Not checked')) return '';
+  const cls = wc === 'Confirmed' ? 'good' : wc === 'Not found' ? 'bad' : 'warn';
+  const icon = wc === 'Confirmed' ? '✓' : wc === 'Not found' ? '?' : '~';
+  return `<span class="chip ${cls}" title="Web check: ${esc(wc)}">${icon} ${esc(wc)}</span>`;
+}
+const lateChip = c => c.late ? '<span class="chip warn" title="Submitted after the 15 Sept close">Late</span>' : '';
+const ilChip = c => (F.il && c.il) ? '<span class="chip accent" title="Israeli semifinal candidate">IL semifinal</span>' : '';
+const dots = n => `<span class="dots" title="On ${n} of 3 shortlists" aria-label="On ${n} of 3 shortlists">${[0, 1, 2].map(i => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span>`;
+function deltaBadge(c, r) {
+  if (!F.reweight || !isCustom()) return '';
+  const now = c.$.rank[r], was = BASE[c.id][r];
+  if (now == null) return '';
+  if (was == null || was > D.settings.length) return '<span class="delta new" title="Not on the sheet\'s shortlist">new</span>';
+  const d = was - now;
+  if (!d) return '';
+  return `<span class="delta ${d > 0 ? 'up' : 'down'}" title="Sheet rank ${was}">${d > 0 ? '▲' : '▼'}${Math.abs(d)}</span>`;
+}
+const site = u => { if (!u) return ''; const href = /^https?:\/\//i.test(u) ? u : 'https://' + u; return `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(u.replace(/^https?:\/\//i, '').replace(/\/$/, ''))}</a>`; };
+const safeLink = u => /^https?:\/\//i.test(u || '') ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(u.length > 70 ? u.slice(0, 70) + '…' : u)}</a>` : esc(u);
+const heat = v => `<span class="heat" style="display:inline-block;background:color-mix(in srgb, var(--accent) ${Math.round(v * 16)}%, transparent)">${fmt(v, 0)}</span>`;
+
+function chartCard(ch, extraClass = '') {
+  const total = ch.data.reduce((a, d) => a + d.value, 0);
+  const body = ch.type === 'weekly' ? weeklySvg(ch) : hbars(ch.data, total);
+  const tbl = `<table class="plain"><thead><tr><th>${ch.type === 'weekly' ? 'Week starting' : 'Category'}</th><th class="r">Count</th></tr></thead><tbody>${ch.data.map(d => `<tr><td>${esc(d.label)}</td><td class="r">${d.value}</td></tr>`).join('')}</tbody></table>`;
+  return `<section class="card ${ch.type === 'weekly' ? 'wide' : ''} ${extraClass}"><div class="cardhead"><div><h3>${esc(ch.title)}</h3>${ch.sub ? `<p>${esc(ch.sub)}</p>` : ''}</div>
+    <button class="linkbtn" data-act="toggle-table">Show table</button></div><div class="chart-body">${body}</div><div class="chart-table hidden">${tbl}</div></section>`;
+}
+function hbars(data, total) {
+  const max = Math.max(1, ...data.map(d => d.value));
+  return `<div class="hbars">${data.map(d => `<div class="hrow" data-tip="${esc(d.label)}: ${d.value}${total ? ` (${Math.round(d.value / total * 100)}% of mentions)` : ''}">
+    <span class="lab" title="${esc(d.label)}">${esc(d.label)}</span><span class="track"><span class="fill" style="width:${d.value / max * 100}%"></span></span><span class="val">${d.value}</span></div>`).join('')}</div>`;
+}
+function weeklySvg(ch) {
+  const data = ch.data, W = 900, H = 220, pl = 34, pr = 10, pt = 14, pb = 28;
+  const max = Math.max(1, ...data.map(d => d.value));
+  const step = Math.ceil(max / 4 / 5) * 5 || 1, top = step * 4;
+  const bw = (W - pl - pr) / data.length;
+  const y = v => pt + (H - pt - pb) * (1 - v / top);
+  let g = '<g class="grid">';
+  for (let v = 0; v <= top; v += step) g += `<line x1="${pl}" x2="${W - pr}" y1="${y(v)}" y2="${y(v)}"></line><text x="${pl - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+  g += '</g>';
+  let bars = '', labels = '', lastMonth = '';
+  data.forEach((d, i) => {
+    const x = pl + i * bw, h = (H - pt - pb) - (y(d.value) - pt);
+    const dt = new Date(d.label + 'T00:00:00');
+    const tip = `Week of ${dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}: ${d.value}`;
+    bars += `<rect class="hit" x="${x}" y="${pt}" width="${bw}" height="${H - pt - pb}" fill="transparent" data-tip="${esc(tip)}"></rect>`;
+    if (d.value) bars += `<rect class="b" x="${x + 1}" y="${y(d.value)}" width="${Math.max(1, bw - 2)}" height="${h}" rx="2" data-tip="${esc(tip)}"></rect>`;
+    const m = dt.toLocaleDateString('en-GB', { month: 'short' });
+    if (m !== lastMonth) { labels += `<text x="${x}" y="${H - 8}">${m}</text>`; lastMonth = m; }
+  });
+  let marker = '';
+  if (ch.marker && data.length) {
+    const t0 = new Date(data[0].label + 'T00:00:00'), tm = new Date(ch.marker + 'T00:00:00');
+    const x = pl + ((tm - t0) / 864e5 / 7) * bw;
+    marker = `<line class="marker" x1="${x}" x2="${x}" y1="${pt - 6}" y2="${H - pb}"></line><text x="${x - 4}" y="${pt}" text-anchor="end" style="fill:var(--body)">Close 15 Sept</text>`;
+  }
+  return `<svg class="weekly" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(ch.title)}">${g}<line class="base" x1="${pl}" x2="${W - pr}" y1="${H - pb}" y2="${H - pb}"></line>${bars}${marker}${labels}</svg>`;
+}
+function initTip() {
+  const tip = $('#tip');
+  document.addEventListener('mousemove', e => {
+    const t = e.target.closest && e.target.closest('[data-tip]');
+    if (!t) { tip.classList.add('hidden'); return; }
+    tip.textContent = t.getAttribute('data-tip');
+    tip.classList.remove('hidden');
+    const r = tip.getBoundingClientRect();
+    let x = e.clientX + 14, y = e.clientY + 14;
+    if (x + r.width > innerWidth - 8) x = e.clientX - r.width - 14;
+    if (y + r.height > innerHeight - 8) y = e.clientY - r.height - 14;
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  });
+  document.addEventListener('scroll', () => tip.classList.add('hidden'), true);
+}
+
+/* ---------- Overview */
+VIEWS.overview = el => {
+  const intro = {
+    core: 'Everything in the applicant screen: pipeline, scores, shortlists and data quality.',
+    organisers: 'The applicant screen for programme owners: pipeline, scores, shortlists and data quality.',
+    jury: `The ${D.companies ? D.companies.length : ''} companies that passed the Workforce-fit gate, with the reviewer's pre-scores. Use the rubric lab to test your own weights.`,
+    sponsors: 'Who applied to the Workforce Learning Track, and the companies that stand out on every rubric.',
+  }[D.meta.audience] || '';
+  let kpis = (D.keyCounts || []).filter(k => !(F.reweight && /^Companies on/.test(k.label)));
+  let html = `<div class="pagehead"><div><h2>Overview</h2><p class="muted">${esc(intro)}</p></div></div>${customFlag()}<div class="grid kpis">`;
+  html += kpis.map(k => `<div class="kpi"><div class="v num">${esc(String(k.value).replace(/\.0$/, ''))}</div><div class="l">${esc(k.label)}</div></div>`).join('');
+  if (D.companies && F.shortlists) {
+    const on1 = D.companies.filter(c => c.$.lists >= 1).length, on3 = D.companies.filter(c => c.$.lists === 3).length;
+    const live = isCustom() ? ' (your settings)' : '';
+    html += `<div class="kpi ${live ? 'live' : ''}"><div class="v num">${on1}</div><div class="l">On at least one top-${S.len} shortlist${live}</div></div>
+             <div class="kpi ${live ? 'live' : ''}"><div class="v num">${on3}</div><div class="l">On all three shortlists${live}</div></div>`;
+  }
+  html += `</div><div class="grid charts">${(D.charts || []).map(ch => chartCard(ch)).join('')}</div>`;
+  el.innerHTML = html;
+};
+
+/* ---------- Highlights (sponsors) */
+VIEWS.highlights = el => {
+  const H = D.highlights || [], m = D.lensMax || {};
+  el.innerHTML = `<div class="pagehead"><div><h2>Highlighted companies</h2><p class="muted">These ${H.length} companies are on all three shortlists, and a light independent web check confirmed the company and at least one of its claims. Listed in order of the shared-core rubric.</p></div></div>
+  <div class="grid hl">${H.map(h => `<article class="card"><h3 style="font-size:21px">${esc(h.name)}</h3>
+    <div class="meta-line">${esc(h.country)} · ${esc(h.region)}${h.stage ? ' · ' + esc(h.stage) : ''} ${wcChip(h.wc)}</div>
+    <p style="margin:12px 0">${esc(h.note)}</p>
+    <div class="meter"><span>Employer lens</span><span class="t"><span style="width:${h.employer / (m.employer || 15) * 100}%"></span></span><span class="num">${fmt(h.employer, 1)}/${fmt(m.employer, 0)}</span></div>
+    <div class="meter"><span>Investor lens</span><span class="t"><span style="width:${h.investor / (m.investor || 15) * 100}%"></span></span><span class="num">${fmt(h.investor, 1)}/${fmt(m.investor, 0)}</span></div>
+    <p class="small" style="margin:14px 0 0">${site(h.website)}</p></article>`).join('')}</div>
+  <p class="small muted" style="margin-top:20px">Employer lens: could an organisation buy and deploy this? Investor lens: can this team grow it into a business? Figures in the descriptions are as reported by the applicants.</p>`;
+};
+
+/* ---------- Shortlists */
+VIEWS.shortlists = el => {
+  const L = D.companies;
+  const top = r => L.filter(c => c.$.rank[r] != null && c.$.rank[r] <= S.len).sort((a, b) => a.$.rank[r] - b.$.rank[r]);
+  const on = n => L.filter(c => c.$.lists === n).length;
+  let html = `<div class="pagehead"><div><h2>Shortlists & overlap</h2><p class="muted">Top ${S.len} on each rubric, out of ${S.nRanked} ranked companies. Companies on all three lists are the safest names to highlight first.</p></div></div>${customFlag()}
+    <div class="filters"><div class="seg" role="group" aria-label="View"><button data-v="side" aria-pressed="${S.slView === 'side'}">Side by side</button><button data-v="overlap" aria-pressed="${S.slView === 'overlap'}">Overlap</button></div>
+    <span class="count">${on(3)} on all three · ${on(2)} on two · ${on(1)} on one</span></div>`;
+  if (S.slView === 'side') {
+    html += `<div class="grid sl3">${RK.map(r => {
+      const rb = D.rubrics[r], mx = maxScore(r);
+      const q = r === 'R1' ? 'A shared core plus one lens per stakeholder.' : rb.rows[0].question;
+      return `<section class="card"><h3>${r.slice(1)} · ${esc(rb.name)}</h3><p class="q">${esc(q)}</p><ol class="slist">${top(r).map(c => `
+        <li tabindex="0" data-act="open" data-id="${esc(c.id)}"><span class="rk">${c.$.rank[r]}</span><div style="min-width:0"><div class="nm">${esc(c.name)}</div>
+        <div class="sub">${esc(c.country)} ${dots(c.$.lists)} ${wcChip(c.wc)} ${lateChip(c)} ${ilChip(c)}</div></div>
+        <div class="sc"><div class="num">${fmt(c.$.sc[r], 1)}<span class="muted small">/${fmt(mx, 0)}</span></div>${deltaBadge(c, r)}</div></li>`).join('')}</ol></section>`;
+    }).join('')}</div>`;
+  } else {
+    const rows = L.filter(c => c.$.lists > 0).sort((a, b) => b.$.lists - a.$.lists || ((b.$.sc.R1 + b.$.sc.R2 + b.$.sc.R3) - (a.$.sc.R1 + a.$.sc.R2 + a.$.sc.R3)) || a.row - b.row);
+    const rk = (c, r) => { const v = c.$.rank[r]; return v == null ? '–' : v <= S.len ? `<b>${v}</b>` : `<span class="muted">${v}</span>`; };
+    html += `<div class="tablewrap"><table><thead><tr><th class="r">#</th><th>Company</th><th>Country</th><th class="c">Lists</th><th class="r">R1 rank</th><th class="r">R2 rank</th><th class="r">R3 rank</th><th>Web check</th><th>Why it stands out</th></tr></thead><tbody>
+      ${rows.map((c, i) => `<tr class="click" tabindex="0" data-act="open" data-id="${esc(c.id)}"><td class="r muted">${i + 1}</td><td class="name">${esc(c.name)} ${lateChip(c)} ${ilChip(c)}</td><td>${esc(c.country)}</td><td class="c">${dots(c.$.lists)}</td>
+        <td class="r">${rk(c, 'R1')}</td><td class="r">${rk(c, 'R2')}</td><td class="r">${rk(c, 'R3')}</td><td>${wcChip(c.wc)}</td><td class="wrap muted">${esc(c.note)}</td></tr>`).join('')}</tbody></table></div>`;
+  }
+  el.innerHTML = html;
+  $$('[data-v]', el).forEach(b => b.addEventListener('click', () => { S.slView = b.dataset.v; render(); }));
+};
+
+/* ---------- Explorer */
+function uniq(arr) { return [...new Set(arr.filter(Boolean))].sort((a, b) => a.localeCompare(b)); }
+function opt(v, label, cur) { return `<option value="${esc(v)}" ${String(cur) === String(v) ? 'selected' : ''}>${esc(label)}</option>`; }
+VIEWS.explorer = el => {
+  const L = D.companies, E = S.ex;
+  const regions = uniq(L.map(c => c.region)), wcs = uniq(L.map(c => c.wc));
+  el.innerHTML = `<div class="pagehead"><div><h2>All scores</h2><p class="muted">${F.gateMin ? 'Every ranked company' : 'Every scored applicant'} with its ten criterion scores (0–4) and three rubric totals. Click a row for the full profile and the anchor behind each score.</p></div></div>${customFlag()}
+  <div class="filters">
+    <input class="field" id="ex-q" type="search" placeholder="Search company, country, note…" value="${esc(E.q)}" aria-label="Search" />
+    <select class="field" id="ex-region" aria-label="Region">${opt('', 'All regions', E.region)}${regions.map(r => opt(r, r, E.region)).join('')}</select>
+    <select class="field" id="ex-lists" aria-label="Shortlists">${opt('', 'Any shortlist status', E.lists)}${opt('3', 'On all three', E.lists)}${opt('2+', 'On two or more', E.lists)}${opt('1+', 'On at least one', E.lists)}${opt('0', 'On none', E.lists)}</select>
+    <select class="field" id="ex-wc" aria-label="Web check">${opt('', 'Any web check', E.wc)}${wcs.map(r => opt(r, r, E.wc)).join('')}</select>
+    <select class="field" id="ex-late" aria-label="Late entries">${opt('', 'Late and on time', E.late)}${opt('hide', 'Hide late entries', E.late)}${opt('only', 'Late entries only', E.late)}</select>
+    ${F.gateMin ? '' : `<select class="field" id="ex-ranked" aria-label="Ranked">${opt('ranked', 'Ranked only', E.ranked)}${opt('all', 'All scored', E.ranked)}${opt('unranked', 'Not ranked (below fit gate)', E.ranked)}</select>`}
+    ${F.il ? `<select class="field" id="ex-il" aria-label="Israeli semifinal">${opt('', 'IL semifinal: any', E.il)}${opt('yes', 'IL semifinal candidates', E.il)}</select>` : ''}
+    <span class="count" id="ex-count"></span></div>
+  <div class="tablewrap" id="ex-table"></div>`;
+  const on = (id, k, ev = 'change') => { const n = $('#' + id, el); if (n) n.addEventListener(ev, () => { E[k] = n.value; drawExplorer(); }); };
+  on('ex-q', 'q', 'input'); on('ex-region', 'region'); on('ex-lists', 'lists'); on('ex-wc', 'wc'); on('ex-late', 'late'); on('ex-ranked', 'ranked'); on('ex-il', 'il');
+  drawExplorer();
+};
+function drawExplorer() {
+  const E = S.ex, q = E.q.trim().toLowerCase();
+  let rows = D.companies.filter(c => {
+    if (q && !(`${c.name} ${c.country} ${c.region} ${c.note} ${c.id}`.toLowerCase().includes(q))) return false;
+    if (E.region && c.region !== E.region) return false;
+    if (E.wc && c.wc !== E.wc) return false;
+    if (E.late === 'hide' && c.late) return false;
+    if (E.late === 'only' && !c.late) return false;
+    if (E.il === 'yes' && !c.il) return false;
+    if (!F.gateMin) { if (E.ranked === 'ranked' && !c.$.ranked) return false; if (E.ranked === 'unranked' && c.$.ranked) return false; }
+    if (E.lists === '3' && c.$.lists !== 3) return false;
+    if (E.lists === '2+' && c.$.lists < 2) return false;
+    if (E.lists === '1+' && c.$.lists < 1) return false;
+    if (E.lists === '0' && c.$.lists !== 0) return false;
+    return true;
+  });
+  const key = E.sort, dir = E.dir;
+  const val = c => {
+    if (RK.includes(key)) return c.$.rank[key] ?? 1e9;
+    if (key.startsWith('sc')) return -(c.$.sc[key.slice(2)]);
+    if (key.startsWith('c:')) return -c.s[+key.slice(2)];
+    if (key === 'lists') return -c.$.lists;
+    return String(c[key] || '').toLowerCase();
+  };
+  rows.sort((a, b) => { const x = val(a), y = val(b); return (x < y ? -1 : x > y ? 1 : 0) * dir || a.row - b.row; });
+  $('#ex-count').textContent = `${rows.length} of ${D.companies.length}`;
+  const th = (k, label, cls = '', title = '') => `<th class="sortable ${cls} ${key === k ? 'sorted' : ''}" data-sort="${k}" title="${esc(title || 'Sort')}">${label}${key === k ? (dir > 0 ? ' ↓' : ' ↑') : ''}</th>`;
+  $('#ex-table').innerHTML = `<table><thead><tr>${th('R1', 'R1 #', 'r', 'Rank on rubric 1')}${th('R2', 'R2 #', 'r', 'Rank on rubric 2')}${th('R3', 'R3 #', 'r', 'Rank on rubric 3')}${th('name', 'Company')}${th('country', 'Country')}
+    ${C.map((c, i) => th('c:' + i, esc(c.short), 'c', c.label + ' (0–4)')).join('')}${th('scR1', 'R1', 'r', 'Shared core + lenses score')}${th('scR2', 'R2', 'r', 'Evidence of change score')}${th('scR3', 'R3', 'r', 'Classic score')}${th('lists', 'Lists', 'c')}<th>Flags</th></tr></thead>
+    <tbody>${rows.map(c => `<tr class="click" tabindex="0" data-act="open" data-id="${esc(c.id)}">${RK.map(r => `<td class="r">${c.$.rank[r] ?? '<span class="muted">–</span>'}</td>`).join('')}
+      <td class="name">${esc(c.name)}</td><td>${esc(c.country)}</td>${c.s.map(v => `<td class="c">${heat(v)}</td>`).join('')}
+      ${RK.map(r => `<td class="r">${fmt(c.$.sc[r], 1)}</td>`).join('')}<td class="c">${dots(c.$.lists)}</td><td>${wcChip(c.wc)} ${lateChip(c)} ${ilChip(c)}</td></tr>`).join('')}</tbody></table>`;
+  $$('#ex-table th[data-sort]').forEach(h => h.addEventListener('click', () => {
+    const k = h.dataset.sort; if (S.ex.sort === k) S.ex.dir *= -1; else { S.ex.sort = k; S.ex.dir = 1; } drawExplorer();
+  }));
+}
+
+/* ---------- Rubric lab */
+VIEWS.lab = el => {
+  const gates = [0, 1, 2, 3, 4].filter(g => g >= (F.gateMin || 0));
+  const dw = defaultWeights();
+  const rowsHtml = RK.map(r => {
+    const rb = D.rubrics[r];
+    return `<tr class="group"><td colspan="${C.length + 2}">${r.slice(1)} · ${esc(rb.name)} <span class="muted" id="tot-${r}"></span></td></tr>` +
+      rb.rows.map((row, i) => `<tr><td style="min-width:170px">${esc(r === 'R1' ? row.name : 'Weights')}<div class="small muted">${esc(row.question)}</div></td>
+        ${C.map((c, j) => { const v = S.w[r][i][j]; return `<td class="c"><input class="w ${v ? '' : 'zero'} ${Math.abs(v - dw[r][i][j]) > 1e-9 ? 'changed' : ''}" type="number" min="0" max="100" step="any" inputmode="decimal" value="${+v.toFixed(4)}" data-r="${r}" data-i="${i}" data-j="${j}" aria-label="${esc(r + ' ' + row.name + ' — ' + c.label)}" /></td>`; }).join('')}
+        <td class="r num" id="rt-${r}-${i}"></td></tr>`).join('');
+  }).join('');
+  el.innerHTML = `<div class="pagehead"><div><h2>Rubric lab</h2><p class="muted">Change the weights, the fit gate or the list length and every shortlist, rank and overlap recalculates, just like the blue cells on the Rubrics tab. Your settings are saved in this browser only and never change the sheet.</p></div></div>${customFlag()}
+  <div class="grid lab-grid">
+    <section class="card"><h3 style="margin-bottom:14px">Settings</h3>
+      <div class="setting"><label for="gate">Minimum Workforce fit to be ranked</label><select class="field" id="gate">${gates.map(g => opt(g, g + (g === D.settings.gate ? ' (sheet)' : ''), S.gate)).join('')}</select></div>
+      <div class="setting"><label for="len">Shortlist length: <b id="len-v">${S.len}</b>${S.len === D.settings.length ? ' (sheet)' : ''}</label><input type="range" id="len" min="10" max="50" step="1" value="${S.len}" /></div>
+      <div class="setting"><label>Entries submitted after the 15 Sept close</label><div class="seg" role="group"><button data-late="include" aria-pressed="${S.lateMode === 'include'}">Include (sheet)</button><button data-late="exclude" aria-pressed="${S.lateMode === 'exclude'}">Exclude</button></div></div>
+      <p class="small muted">Each criterion score (0–4) is divided by 4 and multiplied by its weight. Ties break on Evidence that work changed, then Commercial traction, as in the sheet.</p>
+      <button class="btn sm" data-act="reset">Reset everything to the sheet</button>
+      <div class="small muted" style="margin-top:14px" id="ranked-count"></div>
+    </section>
+    <section class="card" style="padding:0;overflow:hidden"><div class="tablewrap" style="border:0;border-radius:0;max-height:none"><table><thead><tr><th>Rubric / lens</th>${C.map(c => `<th class="c" title="${esc(c.label + ': ' + c.measures)}">${esc(c.short)}</th>`).join('')}<th class="r">Total</th></tr></thead><tbody>${rowsHtml}</tbody></table></div></section>
+  </div>
+  <div class="sec"><h3 style="font-size:20px;margin-bottom:12px">What changed against the sheet</h3><div class="grid movers" id="movers"></div></div>`;
+  let t;
+  $$('input.w', el).forEach(inp => inp.addEventListener('input', () => {
+    const v = Math.max(0, Math.min(100, parseFloat(inp.value) || 0));
+    S.w[inp.dataset.r][+inp.dataset.i][+inp.dataset.j] = v;
+    inp.classList.toggle('zero', !v);
+    inp.classList.toggle('changed', Math.abs(v - dw[inp.dataset.r][+inp.dataset.i][+inp.dataset.j]) > 1e-9);
+    clearTimeout(t); t = setTimeout(() => { compute(S); persist(); labTotals(); drawMovers(); refreshFlag(); }, 120);
+  }));
+  $('#gate', el).addEventListener('change', e => { S.gate = +e.target.value; compute(S); persist(); render(); });
+  $('#len', el).addEventListener('input', e => { S.len = +e.target.value; $('#len-v').textContent = S.len; clearTimeout(t); t = setTimeout(() => { compute(S); persist(); drawMovers(); refreshFlag(); }, 80); });
+  $('#len', el).addEventListener('change', () => render());
+  $$('[data-late]', el).forEach(b => b.addEventListener('click', () => { S.lateMode = b.dataset.late; compute(S); persist(); render(); }));
+  labTotals(); drawMovers();
+};
+function refreshFlag() {
+  const cur = $('.custom-flag'), html = customFlag();
+  if (cur && !html) cur.remove();
+  else if (!cur && html) $('.pagehead').insertAdjacentHTML('afterend', html);
+  else if (cur) cur.outerHTML = html;
+}
+function labTotals() {
+  RK.forEach(r => {
+    S.w[r].forEach((row, i) => { const n = $(`#rt-${r}-${i}`); if (n) n.textContent = fmt(row.reduce((a, b) => a + b, 0), 1); });
+    const tot = maxScore(r), n = $('#tot-' + r);
+    if (n) n.innerHTML = `— scores out of ${fmt(tot, 1)}${Math.abs(tot - 100) > 0.01 ? ' <span class="warnline">(weights do not add up to 100)</span>' : ''}`;
+  });
+  const rc = $('#ranked-count'); if (rc) rc.textContent = `${S.nRanked} companies ranked with these settings.`;
+}
+function drawMovers() {
+  const box = $('#movers'); if (!box) return;
+  if (!isCustom()) { box.innerHTML = '<p class="muted" style="grid-column:1/-1;margin:0">No changes yet. Edit a weight or a setting to see who enters and leaves each shortlist.</p>'; return; }
+  box.innerHTML = RK.map(r => {
+    const L = D.companies;
+    const inNow = L.filter(c => c.$.rank[r] != null && c.$.rank[r] <= S.len);
+    const wasIn = L.filter(c => BASE[c.id][r] != null && BASE[c.id][r] <= D.settings.length);
+    const enter = inNow.filter(c => !wasIn.includes(c)).sort((a, b) => a.$.rank[r] - b.$.rank[r]);
+    const leave = wasIn.filter(c => !inNow.includes(c)).sort((a, b) => BASE[a.id][r] - BASE[b.id][r]);
+    const item = (c, txt) => `<li><a href="#" data-act="open" data-id="${esc(c.id)}">${esc(c.name)}</a> <span class="muted small">${txt}</span></li>`;
+    return `<section class="card"><h3>${r.slice(1)} · ${esc(D.rubrics[r].name)}</h3>
+      <p class="small" style="margin:8px 0 0"><b class="delta up">Enter (${enter.length})</b></p><ul>${enter.map(c => item(c, `now #${c.$.rank[r]}, sheet ${BASE[c.id][r] ? '#' + BASE[c.id][r] : 'unranked'}`)).join('') || '<li class="muted">None</li>'}</ul>
+      <p class="small" style="margin:10px 0 0"><b class="delta down">Leave (${leave.length})</b></p><ul>${leave.map(c => item(c, `sheet #${BASE[c.id][r]}, now ${c.$.rank[r] ? '#' + c.$.rank[r] : 'unranked'}`)).join('') || '<li class="muted">None</li>'}</ul></section>`;
+  }).join('');
+}
+document.addEventListener('click', e => { const a = e.target.closest('a[data-act="open"]'); if (a) e.preventDefault(); });
+
+/* ---------- Pipeline */
+VIEWS.pipeline = el => {
+  const P = D.pipeline, E = S.pl;
+  const issues = uniq(P.flatMap(p => (p.issues || '').split(';').map(s => s.trim())));
+  el.innerHTML = `<div class="pagehead"><div><h2>Pipeline</h2><p class="muted">All ${P.length} unique companies after merging duplicates, with data-quality flags. Revenue and funding are as reported by the applicant.</p></div></div>
+  <div class="filters">
+    <input class="field" id="pl-q" type="search" placeholder="Search company, country, ID${F.contacts ? ', contact' : ''}…" value="${esc(E.q)}" aria-label="Search" />
+    <select class="field" id="pl-region" aria-label="Region">${opt('', 'All regions', E.region)}${uniq(P.map(p => p.region)).map(r => opt(r, r, E.region)).join('')}</select>
+    <select class="field" id="pl-track" aria-label="Track relevant">${opt('', 'Track relevant: any', E.track)}${opt('yes', 'Track relevant', E.track)}${opt('no', 'Not track relevant', E.track)}</select>
+    <select class="field" id="pl-scored" aria-label="Scored">${opt('', 'Scored: any', E.scored)}${opt('yes', 'Scored', E.scored)}${opt('no', 'Not scored', E.scored)}</select>
+    <select class="field" id="pl-stage" aria-label="Stage">${opt('', 'Any stage', E.stage)}${['Concept', 'MVP', 'Beta', 'Released'].map(s => opt(s, s, E.stage)).join('')}</select>
+    <select class="field" id="pl-late" aria-label="Late">${opt('', 'Late and on time', E.late)}${opt('hide', 'Hide late entries', E.late)}${opt('only', 'Late entries only', E.late)}</select>
+    <select class="field" id="pl-issue" aria-label="Data issue">${opt('', 'Any data issue status', E.issue)}${opt('__none', 'No issues', E.issue)}${issues.map(i => opt(i, i, E.issue)).join('')}</select>
+    ${F.il ? `<select class="field" id="pl-il" aria-label="Israeli semifinal">${opt('', 'IL semifinal: any', E.il)}${opt('yes', 'IL semifinal candidates', E.il)}</select>` : ''}
+    ${F.csv ? '<button class="btn sm" id="pl-csv">Download CSV</button>' : ''}<span class="count" id="pl-count"></span></div>
+  <div class="tablewrap" id="pl-table"></div>`;
+  const on = (id, k, ev = 'change') => { const n = $('#' + id, el); if (n) n.addEventListener(ev, () => { E[k] = n.value; drawPipeline(); }); };
+  ['region', 'track', 'scored', 'stage', 'late', 'issue', 'il'].forEach(k => on('pl-' + k, k)); on('pl-q', 'q', 'input');
+  const csv = $('#pl-csv', el); if (csv) csv.addEventListener('click', downloadCsv);
+  drawPipeline();
+};
+function pipelineRows() {
+  const E = S.pl, q = E.q.trim().toLowerCase();
+  const rows = D.pipeline.filter(p => {
+    if (q && !(`${p.name} ${p.country} ${p.id} ${p.contact || ''} ${p.website}`.toLowerCase().includes(q))) return false;
+    if (E.region && p.region !== E.region) return false;
+    if (E.track && p.track !== (E.track === 'yes')) return false;
+    if (E.scored && p.scored !== (E.scored === 'yes')) return false;
+    if (E.stage && p.stage !== E.stage) return false;
+    if (E.late === 'hide' && p.late) return false;
+    if (E.late === 'only' && !p.late) return false;
+    if (E.il === 'yes' && !p.il) return false;
+    if (E.issue === '__none' && p.issues) return false;
+    if (E.issue && E.issue !== '__none' && !(p.issues || '').split(';').map(s => s.trim()).includes(E.issue)) return false;
+    return true;
+  });
+  const k = E.sort, dir = E.dir;
+  const v = p => k === 'revenue' || k === 'fundingRaised' ? -(p[k] ?? -1) : Array.isArray(p[k]) ? p[k].join(', ').toLowerCase() : String(p[k] ?? '').toLowerCase();
+  rows.sort((a, b) => { const x = v(a), y = v(b); return (x < y ? -1 : x > y ? 1 : 0) * dir; });
+  return rows;
+}
+const PCOLS = () => [
+  ['name', 'Company'], ['id', 'ID'], ['country', 'Country'], ['region', 'Region'], ['tm', 'Target market'], ['stage', 'Stage'], ['model', 'Model'],
+  ['revenue', 'Revenue (USD)'], ['fundingRaised', 'Funding raised (USD)'], ['submitted', 'Submitted'], ['track', 'Track'], ['scored', 'Scored'],
+  ...(F.contacts ? [['contact', 'Contact']] : []), ['issues', 'Data issues'], ...(F.contacts ? [['rec', 'Airtable record']] : []),
+];
+function drawPipeline() {
+  const rows = pipelineRows(), E = S.pl;
+  $('#pl-count').textContent = `${rows.length} of ${D.pipeline.length}`;
+  const yn = b => b ? 'Yes' : '<span class="muted">No</span>';
+  const cell = (p, k) => {
+    if (k === 'name') return `<td class="name">${esc(p.name)} ${lateChip(p)} ${ilChip(p)}</td>`;
+    if (k === 'revenue' || k === 'fundingRaised') return `<td class="r">${p[k] == null ? '<span class="muted">–</span>' : usd(p[k])}</td>`;
+    if (k === 'track' || k === 'scored') return `<td>${yn(p[k])}</td>`;
+    if (k === 'issues') return `<td class="muted" style="min-width:200px">${esc(p.issues)}</td>`;
+    if (k === 'tm' || k === 'model') return `<td style="min-width:140px">${esc((p[k] || []).join(', '))}</td>`;
+    if (k === 'submitted') return `<td class="num" style="white-space:nowrap">${esc(p.submitted)}</td>`;
+    return `<td>${esc(p[k])}</td>`;
+  };
+  $('#pl-table').innerHTML = `<table><thead><tr>${PCOLS().map(([k, l]) => `<th class="sortable ${E.sort === k ? 'sorted' : ''} ${k === 'revenue' || k === 'fundingRaised' ? 'r' : ''}" data-sort="${k}">${l}${E.sort === k ? (E.dir > 0 ? ' ↓' : ' ↑') : ''}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(p => `<tr class="click" tabindex="0" data-act="open" data-id="${esc(p.id)}">${PCOLS().map(([k]) => cell(p, k)).join('')}</tr>`).join('')}</tbody></table>`;
+  $$('#pl-table th[data-sort]').forEach(h => h.addEventListener('click', () => { const k = h.dataset.sort; if (S.pl.sort === k) S.pl.dir *= -1; else { S.pl.sort = k; S.pl.dir = 1; } drawPipeline(); }));
+}
+function downloadCsv() {
+  const cols = PCOLS(), rows = pipelineRows();
+  const cell = v => { let s = Array.isArray(v) ? v.join(', ') : typeof v === 'boolean' ? (v ? 'Yes' : 'No') : v == null ? '' : String(v); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
+  const csv = [cols.map(c => cell(c[1])).join(','), ...rows.map(p => cols.map(([k]) => cell(p[k])).join(','))].join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `wf27-pipeline-${D.meta.audience}-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+/* ---------- Data quality */
+VIEWS.quality = el => {
+  const issues = (D.charts || []).find(c => c.id === 'issues');
+  const dup = (D.pipeline || []).filter(p => p.merged > 1).length;
+  el.innerHTML = `<div class="pagehead"><div><h2>Data quality</h2><p class="muted">What changed when the screen moved from the Google Sheet export to the Airtable source, and which records need attention before anything goes public.</p></div></div>
+  <div class="grid kpis">
+    <div class="kpi"><div class="v num">${(D.pipeline || []).filter(p => p.issues).length}</div><div class="l">Companies with at least one flag</div></div>
+    <div class="kpi"><div class="v num">${dup}</div><div class="l">Companies with merged duplicate submissions</div></div>
+    <div class="kpi"><div class="v num">${(D.pipeline || []).filter(p => p.late).length}</div><div class="l">Submitted after the 15 Sept close</div></div>
+    <div class="kpi"><div class="v num">${(D.companies || []).filter(c => c.wc === 'Not found' || /watch/i.test(c.wc)).length}</div><div class="l">Shortlisted with "Not found" or "watch" web check</div></div>
+  </div>
+  <div class="grid charts">${issues ? chartCard(issues) : ''}
+  ${(D.changes || []).map(sec => `<section class="card ${sec.rows.length > 10 ? 'wide' : ''}"><h3 style="margin-bottom:10px">${esc(sec.title)}</h3><div class="tablewrap simple-table"><table class="plain"><tbody>
+    ${sec.rows.map((r, i) => `<tr>${r.filter((v, j) => v || j === 0).map(v => `<${i === 0 && /^Company$/.test(r[0]) ? 'th' : 'td'}>${esc(v)}</${i === 0 && /^Company$/.test(r[0]) ? 'th' : 'td'}>`).join('')}</tr>`).join('')}</tbody></table></div></section>`).join('')}
+  </div>
+  ${(D.companies || []).some(c => c.wc === 'Not found' || /watch/i.test(c.wc)) ? `<div class="sec"><h3>Check directly before naming publicly</h3><div class="tablewrap simple-table"><table><thead><tr><th>Company</th><th>Country</th><th>Web check</th><th class="c">Lists</th><th>Note</th></tr></thead><tbody>
+    ${D.companies.filter(c => c.wc === 'Not found' || /watch/i.test(c.wc)).map(c => `<tr class="click" tabindex="0" data-act="open" data-id="${esc(c.id)}"><td class="name">${esc(c.name)}</td><td>${esc(c.country)}</td><td>${wcChip(c.wc)}</td><td class="c">${dots(c.$.lists)}</td><td class="wrap muted">${esc(c.wcNote)}</td></tr>`).join('')}</tbody></table></div></div>` : ''}`;
+};
+
+/* ---------- Method */
+VIEWS.method = el => {
+  const M = D.method || {};
+  const list = a => (a && a.length) ? `<ul>${a.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
+  const dw = D.companies ? defaultWeights() : null;
+  const weights = dw ? `<div class="sec"><h3>Sheet weights</h3><div class="tablewrap simple-table"><table class="plain"><thead><tr><th>Rubric / lens</th>${C.map(c => `<th class="c">${esc(c.short)}</th>`).join('')}<th class="r">Total</th></tr></thead><tbody>
+    ${RK.map(r => D.rubrics[r].rows.map((row, i) => `<tr><td>${r.slice(1)} · ${esc(r === 'R1' ? row.name : D.rubrics[r].name)}</td>${dw[r][i].map(v => `<td class="c ${v ? '' : 'muted'}">${v ? fmt(v, 1) : '–'}</td>`).join('')}<td class="r">${fmt(dw[r][i].reduce((a, b) => a + b, 0), 0)}</td></tr>`).join('')).join('')}</tbody></table></div>
+    <p class="small muted">Minimum Workforce fit to be ranked: ${D.settings.gate}. Shortlist length: ${D.settings.length}.</p></div>` : '';
+  const lenses = (!dw && D.rubrics && D.rubrics.R1) ? `<div class="sec"><h3>The stakeholder lenses</h3><div class="tablewrap simple-table"><table class="plain"><thead><tr><th>Lens</th><th>Serves</th><th>Question it answers</th></tr></thead><tbody>${D.rubrics.R1.rows.map(r => `<tr><td class="name">${esc(r.name)}</td><td>${esc(r.serves)}</td><td>${esc(r.question)}</td></tr>`).join('')}</tbody></table></div></div>` : '';
+  el.innerHTML = `<div class="pagehead"><div><h2>Method</h2><p class="muted">How applicants were scored, and how to read the results.</p></div></div>
+  <div class="prose">
+    <div class="sec"><h3>How the scores were made</h3>${list(M.how)}</div>
+    <div class="sec"><h3>The three rubrics</h3>${list(M.rubrics)}</div>
+    ${weights}${lenses}
+    <div class="sec"><h3>Criterion anchors (score 0–4)</h3><div class="tablewrap simple-table"><table class="plain anchors"><thead><tr><th>Criterion</th>${[0, 1, 2, 3, 4].map(i => `<th>${i}</th>`).join('')}</tr></thead><tbody>
+      ${C.map(c => `<tr><td><b>${esc(c.label)}</b><div class="small muted">${esc(c.measures)}</div></td>${c.levels.map(l => `<td>${esc(l)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>
+    <div class="sec"><h3>Light web check</h3>${list(M.webcheck)}</div>
+    <div class="sec"><h3>Before anything goes public</h3>${list(M.caveats)}</div>
+  </div>`;
+};
+
+/* ---------- Company drawer */
+let lastFocus = null;
+function openCompany(id) {
+  const c = byId[id], p = pById[id];
+  if (!c && !p) return;
+  lastFocus = document.activeElement;
+  const x = c || p;
+  let h = `<button class="iconbtn close" data-close aria-label="Close">✕</button><h2 id="dr-title">${esc(x.name)}</h2>
+    <div class="meta-line">${esc(x.country)} · ${esc(x.region)}${x.stage ? ' · ' + esc(x.stage) : ''} ${c ? wcChip(c.wc) : ''} ${lateChip(x)} ${ilChip(x)}</div>`;
+  if (x.website) h += `<p class="small" style="margin:10px 0 0">${site(x.website)}</p>`;
+  if (c) {
+    if (c.note) h += `<div class="sec"><h3>Why it stands out</h3><blockquote>${esc(c.note)}</blockquote></div>`;
+    h += `<div class="sec"><h3>Rubric results</h3>`;
+    RK.forEach(r => {
+      const rk = c.$.rank[r];
+      h += `<div class="rub"><span>${r.slice(1)} · ${esc(D.rubrics[r].name)}</span><span class="num"><b>${fmt(c.$.sc[r], 1)}</b><span class="muted small">/${fmt(maxScore(r), 0)}</span></span>
+        <span class="small num">${rk ? `#${rk} of ${S.nRanked} ${rk <= S.len ? '<span class="chip accent">shortlist</span>' : ''} ${deltaBadge(c, r)}` : '<span class="muted">not ranked</span>'}</span></div>`;
+    });
+    const lens = c.$.lens, lnames = D.rubrics.R1.rows.map(r => r.name.replace(/ lens$/i, '').replace(/ \(shared\)$/i, ''));
+    const lmax = S.w.R1.map(w => w.reduce((a, b) => a + b, 0));
+    h += `<div style="margin-top:12px"><div class="small muted">Rubric 1 by lens</div>
+      <div class="stack" role="img" aria-label="Rubric 1 lens breakdown">${lens.map((v, i) => v > 0 ? `<span style="flex:${v};background:var(--l${i + 1})" data-tip="${esc(lnames[i])}: ${fmt(v, 2)} of ${fmt(lmax[i], 1)}"></span>` : '').join('')}<span style="flex:${Math.max(0, maxScore('R1') - c.$.sc.R1)};background:var(--line2)" data-tip="Points not earned"></span></div>
+      <div class="legend">${lens.map((v, i) => `<span><i style="background:var(--l${i + 1})"></i>${esc(lnames[i])} <b class="num">${fmt(v, 1)}</b><span class="muted">/${fmt(lmax[i], 0)}</span></span>`).join('')}</div></div></div>`;
+    h += `<div class="sec"><h3>Criterion scores</h3>${C.map((cr, i) => { const v = c.s[i]; return `<div class="crit"><span class="n" title="${esc(cr.measures)}">${esc(cr.label)}</span>
+      <span class="pips" aria-label="${v} of 4">${[1, 2, 3, 4].map(k => `<i class="${k <= v ? 'on' : ''}"></i>`).join('')}<b>${fmt(v, 0)}</b></span><span class="a">${esc(cr.levels[v] || '')}</span></div>`; }).join('')}
+      <p class="small muted">Scores are a reviewer's judgement of self-reported answers, not facts.</p></div>`;
+    if (c.wc && !c.wc.startsWith('Not checked')) h += `<div class="sec"><h3>Web check</h3><p style="margin:0 0 8px">${wcChip(c.wc)}</p>${c.wcNote ? `<p style="margin:0 0 6px">${esc(c.wcNote)}</p>` : ''}${c.wcSrc ? `<p class="small" style="margin:0">Source: ${safeLink(c.wcSrc)}</p>` : ''}</div>`;
+  } else {
+    h += `<div class="sec"><p class="muted">Not scored for the track${p && !p.track ? ' (not a workforce or lifelong-learning applicant)' : ''}.</p></div>`;
+  }
+  const facts = [];
+  const add = (k, v) => { if (v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && !v.length)) facts.push(`<dt>${esc(k)}</dt><dd>${v}</dd>`); };
+  add('ID', esc(x.id));
+  if (p) { add('Target market', esc(p.tm.join(', '))); add('Main category', esc(p.cat.join(', '))); add('Target customer', esc(p.cust.join(', '))); add('Business model', esc(p.model.join(', '))); }
+  else if (c && c.model) add('Business model', esc(c.model));
+  if (c && c.funding) add('Funding stage', esc(c.funding));
+  if (F.revenue) { const rv = c ? c.revenue : p.revenue; add('Revenue (reported)', rv == null ? '<span class="muted">not given</span>' : usd(rv)); if (p) add('Funding raised (reported)', p.fundingRaised == null ? '<span class="muted">not given</span>' : usd(p.fundingRaised)); }
+  if (p) { add('Submitted', esc(p.submitted) + (p.late ? ' <span class="chip warn">after close</span>' : '')); if (p.merged > 1) add('Submissions merged', String(p.merged)); }
+  if (F.contacts && p) { add('Contact', esc(p.contact)); add('Airtable record', `<span class="num">${esc(p.rec)}</span>`); }
+  if (F.issues) add('Data issues', esc((c && c.issues) || (p && p.issues)));
+  if (facts.length) h += `<div class="sec"><h3>Facts</h3><dl class="facts">${facts.join('')}</dl></div>`;
+  const dr = $('#drawer');
+  dr.innerHTML = h;
+  dr.classList.remove('hidden'); $('#scrim').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  $('[data-close]', dr).focus();
+}
+function closeDrawer() {
+  $('#drawer').classList.add('hidden'); $('#scrim').classList.add('hidden'); document.body.style.overflow = '';
+  if (lastFocus && lastFocus.focus) lastFocus.focus();
+}
+$('#scrim').addEventListener('click', closeDrawer);
+$('#drawer').addEventListener('click', e => { if (e.target.closest('[data-close]')) closeDrawer(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('#drawer').classList.contains('hidden')) closeDrawer();
+  if (e.key === 'Enter' && e.target.matches && e.target.matches('tr[data-act="open"], li[data-act="open"]')) openCompany(e.target.dataset.id);
+});
+
+tryResume();
+})();
+</script>
+</body>
+</html>
