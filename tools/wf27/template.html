@@ -215,6 +215,10 @@
   dl.facts dt { color: var(--muted); }
   dl.facts dd { margin: 0; overflow-wrap: anywhere; }
   @media (max-width: 520px) { dl.facts { grid-template-columns: 1fr; gap: 2px; } dl.facts dd { margin-bottom: 8px; } }
+  details.app { border-top: 1px solid var(--line); padding: 8px 0; }
+  details.app summary { cursor: pointer; font-weight: 500; }
+  details.app p { white-space: pre-wrap; margin: 6px 0 0; font-size: 14px; overflow-wrap: anywhere; }
+  .was { margin-left: 6px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
   blockquote { margin: 0; padding: 10px 14px; border-left: 2px solid var(--accent); background: var(--surface); border-radius: 0 10px 10px 0; }
 
   /* highlights */
@@ -851,7 +855,14 @@ VIEWS.quality = el => {
     ${sec.rows.map((r, i) => `<tr>${r.filter((v, j) => v || j === 0).map(v => `<${i === 0 && /^Company$/.test(r[0]) ? 'th' : 'td'}>${esc(v)}</${i === 0 && /^Company$/.test(r[0]) ? 'th' : 'td'}>`).join('')}</tr>`).join('')}</tbody></table></div></section>`).join('')}
   </div>
   ${(D.companies || []).some(c => c.wc === 'Not found' || /watch/i.test(c.wc)) ? `<div class="sec"><h3>Check directly before naming publicly</h3><div class="tablewrap simple-table"><table><thead><tr><th>Company</th><th>Country</th><th>Web check</th><th class="c">Lists</th><th>Note</th></tr></thead><tbody>
-    ${D.companies.filter(c => c.wc === 'Not found' || /watch/i.test(c.wc)).map(c => `<tr class="click" tabindex="0" data-act="open" data-id="${esc(c.id)}"><td class="name">${esc(c.name)}</td><td>${esc(c.country)}</td><td>${wcChip(c.wc)}</td><td class="c">${dots(c.$.lists)}</td><td class="wrap muted">${esc(c.wcNote)}</td></tr>`).join('')}</tbody></table></div></div>` : ''}`;
+    ${D.companies.filter(c => c.wc === 'Not found' || /watch/i.test(c.wc)).map(c => `<tr class="click" tabindex="0" data-act="open" data-id="${esc(c.id)}"><td class="name">${esc(c.name)}</td><td>${esc(c.country)}</td><td>${wcChip(c.wc)}</td><td class="c">${dots(c.$.lists)}</td><td class="wrap muted">${esc(c.wcNote)}</td></tr>`).join('')}</tbody></table></div></div>` : ''}
+  ${(D.rescore && D.rescore.length) ? `<div class="sec"><h3>Re-score vs 3 Nov</h3><p class="small muted">${esc(D.rescoreTitle)} Ranks shown "3 Nov → now"; "now" follows the current rubric settings.</p>
+    <div class="tablewrap simple-table"><table><thead><tr><th>Company</th><th>Change</th><th class="c">Lists</th><th class="r">R1</th><th class="r">R2</th><th class="r">R3</th><th>Criteria that changed</th></tr></thead><tbody>
+    ${D.rescore.slice().sort((a, b) => ['Entered a shortlist', 'Scored for the first time', 'On more lists', 'On fewer lists', 'Left all shortlists'].indexOf(a.status) - ['Entered a shortlist', 'Scored for the first time', 'On more lists', 'On fewer lists', 'Left all shortlists'].indexOf(b.status)).map(r => {
+      const c = byId[r.id]; if (!c) return '';
+      const rk = (i, k) => `${r.ranksOld[i] || '–'} → ${c.$.rank[k] ?? '–'}`;
+      return `<tr class="click" tabindex="0" data-act="open" data-id="${esc(c.id)}"><td class="name">${esc(c.name)}</td><td>${esc(r.status)}</td><td class="c num">${esc(r.listsOld || '–')} → ${c.$.lists}</td>
+        <td class="r num">${rk(0, 'R1')}</td><td class="r num">${rk(1, 'R2')}</td><td class="r num">${rk(2, 'R3')}</td><td class="wrap muted">${esc(r.changed)}</td></tr>`; }).join('')}</tbody></table></div></div>` : ''}`;
 };
 
 /* ---------- Method */
@@ -887,6 +898,9 @@ function openCompany(id) {
   if (x.website) h += `<p class="small" style="margin:10px 0 0">${site(x.website)}</p>`;
   if (c) {
     if (c.note) h += `<div class="sec"><h3>Why it stands out</h3><blockquote>${esc(c.note)}</blockquote></div>`;
+    if (F.internal && (c.conc || c.claim)) h += `<div class="sec"><h3>Internal review <span class="chip">core &amp; organisers only</span></h3>
+      ${c.claim ? `<p style="margin:0 0 8px"><b>Claim to verify:</b> ${esc(c.claim)}</p>` : ''}${c.conc ? `<p style="margin:0 0 8px"><b>Reviewer concerns:</b> ${esc(c.conc)}</p>` : ''}
+      ${c.conf ? `<p class="small muted" style="margin:0">Reviewer confidence: ${esc(c.conf)}</p>` : ''}</div>`;
     h += `<div class="sec"><h3>Rubric results</h3>`;
     RK.forEach(r => {
       const rk = c.$.rank[r];
@@ -899,11 +913,19 @@ function openCompany(id) {
       <div class="stack" role="img" aria-label="Rubric 1 lens breakdown">${lens.map((v, i) => v > 0 ? `<span style="flex:${v};background:var(--l${i + 1})" data-tip="${esc(lnames[i])}: ${fmt(v, 2)} of ${fmt(lmax[i], 1)}"></span>` : '').join('')}<span style="flex:${Math.max(0, maxScore('R1') - c.$.sc.R1)};background:var(--line2)" data-tip="Points not earned"></span></div>
       <div class="legend">${lens.map((v, i) => `<span><i style="background:var(--l${i + 1})"></i>${esc(lnames[i])} <b class="num">${fmt(v, 1)}</b><span class="muted">/${fmt(lmax[i], 0)}</span></span>`).join('')}</div></div></div>`;
     h += `<div class="sec"><h3>Criterion scores</h3>${C.map((cr, i) => { const v = c.s[i]; return `<div class="crit"><span class="n" title="${esc(cr.measures)}">${esc(cr.label)}</span>
-      <span class="pips" aria-label="${v} of 4">${[1, 2, 3, 4].map(k => `<i class="${k <= v ? 'on' : ''}"></i>`).join('')}<b>${fmt(v, 0)}</b></span><span class="a">${esc(cr.levels[v] || '')}</span></div>`; }).join('')}
+      <span class="pips" aria-label="${v} of 4">${[1, 2, 3, 4].map(k => `<i class="${k <= v ? 'on' : ''}"></i>`).join('')}<b>${fmt(v, 0)}</b>${c.prev && c.prev[i] !== v ? `<span class="was" title="Score on 3 Nov">was ${c.prev[i]}</span>` : ''}</span><span class="a">${esc(cr.levels[v] || '')}</span></div>`; }).join('')}
       <p class="small muted">Scores are a reviewer's judgement of self-reported answers, not facts.</p></div>`;
     if (c.wc && !c.wc.startsWith('Not checked')) h += `<div class="sec"><h3>Web check</h3><p style="margin:0 0 8px">${wcChip(c.wc)}</p>${c.wcNote ? `<p style="margin:0 0 6px">${esc(c.wcNote)}</p>` : ''}${c.wcSrc ? `<p class="small" style="margin:0">Source: ${safeLink(c.wcSrc)}</p>` : ''}</div>`;
   } else {
     h += `<div class="sec"><p class="muted">Not scored for the track${p && !p.track ? ' (not a workforce or lifelong-learning applicant)' : ''}.</p></div>`;
+  }
+  const app = F.apptext && D.apps ? D.apps[x.id] : null;
+  if (app) {
+    const part = (label, t, open) => t ? `<details class="app" ${open ? 'open' : ''}><summary>${label}</summary><p>${esc(t)}</p></details>` : '';
+    h += `<div class="sec"><h3>Application <span class="chip">core &amp; organisers only</span></h3>
+      <p class="small muted" style="margin:0 0 6px">Submitted ${esc(app.sub)}${app.n > 1 ? ` · latest of ${app.n} submissions` : ''}${app.fy ? ` · founded ${esc(app.fy)}` : ''}${app.fs ? ` · ${esc(app.fs)}` : ''}</p>
+      ${part('Problem', app.problem, true)}${part('Product', app.product, true)}${part('Team', app.team)}${part('Traction', app.traction)}
+      ${app.video ? `<p class="small" style="margin:8px 0 0">Product video: ${safeLink(app.video)}</p>` : ''}${app.deck ? `<p class="small" style="margin:4px 0 0">Pitch deck: ${safeLink(app.deck)}</p>` : ''}</div>`;
   }
   const facts = [];
   const add = (k, v) => { if (v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && !v.length)) facts.push(`<dt>${esc(k)}</dt><dd>${v}</dd>`); };
