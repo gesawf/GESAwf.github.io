@@ -214,6 +214,8 @@ def read_workbook(path):
             "note": txt(d["Reviewer note"]), "wc": txt(d["Web check"]), "wcNote": txt(d["Web check note"]),
             "wcSrc": txt(d["Check source"]), "issues": txt(d["Data issues"]),
             "il": yes(d["Israeli semifinal candidate"]),
+            "conc": txt(d.get("Internal concerns (reviewer)")), "claim": txt(d.get("Claim to verify")),
+            "conf": txt(d.get("Reviewer confidence")),
             "_sheet": {"ranked": yes(d["Ranked?"]), "R1": d["R1 rank"], "R2": d["R2 rank"], "R3": d["R3 rank"],
                        "lists": int(num(d["Lists (of 3)"]) or 0)},
         })
@@ -277,7 +279,32 @@ def read_workbook(path):
             cur["rows"].append([v for v in vals if v != "→"] if "→" in vals else vals)
     changes = [c for c in changes if c["rows"] or c["title"] != changes[0]["title"]]
 
-    return {"rubrics": rubrics, "criteria": criteria, "settings": settings, "scored": scored,
+    # --- Re-score vs 3 Nov (optional): previous scores and shortlist movement
+    rescore = {}
+    if "Re-score vs 3 Nov" in wb.sheetnames:
+        _, rrows = table(wb["Re-score vs 3 Nov"], 3)
+        for d in rrows:
+            prev = [num(d.get(f"{c[1]} (3 Nov)")) for c in CRITERIA]
+            rescore[txt(d["ID"])] = {
+                "prev": [int(x) for x in prev] if all(x is not None for x in prev) else None,
+                "listsOld": txt(d.get("Shortlists 3 Nov")), "listsNow": txt(d.get("Shortlists now")), "status": txt(d.get("Status")),
+                "ranksOld": [txt(d.get(f"{r} rank 3 Nov")) for r in ("R1", "R2", "R3")],
+                "changed": txt(d.get("Criteria that changed"))}
+        rescore_title = txt(wb["Re-score vs 3 Nov"].cell(1, 1).value)
+    else:
+        rescore_title = ""
+    # --- Applications (optional): full application text, internal only
+    apps = {}
+    if "Applications" in wb.sheetnames:
+        _, arows = table(wb["Applications"], 3)
+        for d in arows:
+            apps[txt(d["ID"])] = {"sub": txt(d.get("Submitted")), "n": int(num(d.get("Submissions")) or 1),
+                                  "fy": txt(d.get("Founding year")), "fs": txt(d.get("Funding stage")),
+                                  "problem": txt(d.get("Problem")), "product": txt(d.get("Product")), "team": txt(d.get("Team")),
+                                  "traction": txt(d.get("Traction")), "video": txt(d.get("Product video")), "deck": txt(d.get("Pitch deck"))}
+
+    return {"rescore": rescore, "rescoreTitle": rescore_title, "apps": apps,
+            "rubrics": rubrics, "criteria": criteria, "settings": settings, "scored": scored,
             "pipeline": pipeline, "readme": readme_lines, "keyCounts": key_counts, "source": source_line,
             "changes": changes}
 
@@ -413,9 +440,9 @@ def scored_charts(rows, title_suffix=""):
 # ---------------------------------------------------------------- payloads per audience
 SCORED_FIELDS = {
     "core": ["id", "row", "name", "country", "region", "late", "s", "revenue", "funding", "stage", "model", "website",
-             "note", "wc", "wcNote", "wcSrc", "issues", "il"],
+             "note", "wc", "wcNote", "wcSrc", "issues", "il", "conc", "claim", "conf"],
     "organisers": ["id", "row", "name", "country", "region", "late", "s", "revenue", "funding", "stage", "model",
-                   "website", "note", "wc", "wcNote", "wcSrc", "issues", "il"],
+                   "website", "note", "wc", "wcNote", "wcSrc", "issues", "il", "conc", "claim", "conf"],
     "jury": ["id", "row", "name", "country", "region", "late", "s", "stage", "website", "note", "wc", "wcNote", "wcSrc"],
 }
 PIPELINE_FIELDS = {
@@ -471,9 +498,13 @@ def build_payloads(w, res):
             "meta": {**common_meta, "audience": aud, "label": AUDIENCES[aud]},
             "features": {"reweight": True, "shortlists": True, "explorer": True, "pipeline": True, "quality": True,
                          "revenue": True, "issues": True, "il": True, "contacts": aud == "core", "csv": True,
-                         "gateMin": 0, "highlights": False},
+                         "gateMin": 0, "highlights": False, "internal": True, "apptext": bool(w["apps"])},
             **base_rubric,
-            "companies": [pick(c, SCORED_FIELDS[aud]) for c in S],
+            "companies": [dict(pick(c, SCORED_FIELDS[aud]), prev=(w["rescore"].get(c["id"]) or {}).get("prev")) for c in S],
+            "apps": w["apps"],
+            "rescore": [dict(v, id=k) for k, v in w["rescore"].items()
+                        if v["status"] and v["status"] != "No change" and (v["status"] != "Scored for the first time" or v["listsNow"] not in ("", "0"))],
+            "rescoreTitle": w["rescoreTitle"],
             "pipeline": [pick(p, PIPELINE_FIELDS[aud]) for p in P],
             "keyCounts": w["keyCounts"],
             "charts": pipeline_charts(P, True),

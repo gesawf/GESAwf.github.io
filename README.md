@@ -132,4 +132,6 @@ The script recomputes every rank with the sheet's own formula and **stops if any
 
 **Passwords and links** are kept in `~/.config/gesa-wf27/secrets.json`, outside the repo; it is created on first run. To change a password, edit it there and rebuild. To change a link, delete that audience's entry and rebuild (a new slug and password are generated, and the old folder is removed). Never commit the workbook or the secrets file; `.gitignore` blocks `*.xlsx`, `*.csv` and `secrets*.json`.
 
+**Optional tabs the build reads** (added with the 8 Nov re-score): *Applications* (full application text and video/deck links, shown in the core and organiser profiles only), *Re-score vs 3 Nov* (previous scores and shortlist movement, core and organisers only), and four extra Scores columns: *Internal concerns (reviewer)*, *Claim to verify*, *Reviewer confidence*, *Score source* (core and organisers only). Jurors and sponsors see only the neutral reviewer note.
+
 **Who sees what** is set in `tools/wf27/build.py` (`SCORED_FIELDS`, `PIPELINE_FIELDS`, `SPONSOR_*`); the page itself is `tools/wf27/template.html`. Preview locally with `python3 -m http.server 8000` and open `http://localhost:8000/p/<slug>/`. The page has to be served over http(s) rather than opened as a file, because it fetches `data.enc`.
