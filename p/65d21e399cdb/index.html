@@ -383,7 +383,7 @@ function start(data) {
   if (D.companies) {
     compute(S);
     BASE = {};
-    D.companies.forEach(c => BASE[c.id] = { ...c.$.rank, lists: c.$.lists });
+    D.companies.forEach(c => BASE[c.id] = { ...c.$.rank, lists: c.$.lists, V2: c.$.v2 ? c.$.v2.rank : null });
     const saved = store.get(SKEY + ':settings', localStorage);
     if (saved && F.reweight) { try { Object.assign(S, JSON.parse(saved)); clampState(); } catch (e) {} }
     compute(S);
@@ -405,23 +405,25 @@ function defaults() {
   return { w: D.companies ? defaultWeights() : {}, gate: st.gate ?? 3, len: st.length ?? 30, lateMode: 'include', tab: null,
     ex: { q: '', region: '', wc: '', lists: '', late: '', ranked: 'ranked', il: '', sort: 'R1', dir: 1 },
     pl: { q: '', region: '', track: '', scored: '', late: '', stage: '', issue: '', il: '', sort: 'name', dir: 1 },
-    slView: 'side' };
+    slView: 'side', v2View: 'top', v2w: D.v2 ? D.v2.w.slice() : null };
 }
 function clampState() {
   const dw = defaultWeights();
   RK.forEach(r => { if (!S.w[r] || S.w[r].length !== dw[r].length || S.w[r].some((row, i) => row.length !== dw[r][i].length)) S.w[r] = dw[r]; });
+  if (D.v2 && (!Array.isArray(S.v2w) || S.v2w.length !== D.v2.w.length)) S.v2w = D.v2.w.slice();
   S.gate = Math.max(F.gateMin ?? 0, Math.min(4, +S.gate || 0));
   S.len = Math.max(10, Math.min(50, +S.len || 30));
 }
 function persist() {
   if (!F.reweight) return;
-  store.set(SKEY + ':settings', JSON.stringify({ w: S.w, gate: S.gate, len: S.len, lateMode: S.lateMode }), localStorage);
+  store.set(SKEY + ':settings', JSON.stringify({ w: S.w, gate: S.gate, len: S.len, lateMode: S.lateMode, v2w: S.v2w }), localStorage);
 }
 function isCustom() {
   const st = D.settings, dw = defaultWeights();
   return S.gate !== st.gate || S.len !== st.length || S.lateMode !== 'include' ||
-    RK.some(r => S.w[r].some((row, i) => row.some((v, j) => Math.abs(v - dw[r][i][j]) > 1e-9)));
+    RK.some(r => S.w[r].some((row, i) => row.some((v, j) => Math.abs(v - dw[r][i][j]) > 1e-9))) || v2Custom();
 }
+const v2Custom = () => !!(D.v2 && S.v2w && S.v2w.some((v, i) => Math.abs(v - D.v2.w[i]) > 1e-9));
 
 /* Mirrors the workbook exactly:
    score = Σ weight × criterion / 4
@@ -453,6 +455,14 @@ function compute(st) {
   });
   list.forEach(c => c.$.lists = RK.filter(r => c.$.rank[r] != null && c.$.rank[r] <= st.len).length);
   S.nRanked = ranked.length;
+  if (D.v2) {  // MindCET v2: same gate; ties break on Evidence of change, then Product viability, then sheet row
+    const w2 = st.v2w || D.v2.w, iE = D.v2.criteria.findIndex(k => k.key === 'evidence'), iV = D.v2.criteria.findIndex(k => k.key === 'viability');
+    list.forEach(c => { c.$.v2 = c.v ? { sc: w2.reduce((a, w, i) => a + w * c.v[i], 0) / 4, rank: null } : null; });
+    const L2 = list.filter(c => c.v && c.$.ranked);
+    L2.forEach(c => c.$.v2.key = c.$.v2.sc + c.v[iE] / 100 + c.v[iV] / 1000 + (1000 - c.row) / 1e7);
+    L2.forEach(c => { c.$.v2.rank = 1 + L2.filter(o => o.$.v2.key > c.$.v2.key).length; });
+    S.nV2 = L2.length;
+  }
 }
 const maxScore = r => S.w[r].reduce((a, row) => a + row.reduce((x, y) => x + y, 0), 0);
 
@@ -462,6 +472,7 @@ function buildTabs() {
   TABS = [{ id: 'overview', label: 'Overview' }];
   if (F.highlights) TABS.push({ id: 'highlights', label: 'Highlighted companies' });
   if (F.shortlists) TABS.push({ id: 'shortlists', label: 'Shortlists & overlap' });
+  if (D.v2 && D.companies) TABS.push({ id: 'v2', label: 'MindCET v2' });
   if (F.explorer) TABS.push({ id: 'explorer', label: 'All scores' });
   if (F.reweight) TABS.push({ id: 'lab', label: 'Rubric lab' });
   if (F.pipeline) TABS.push({ id: 'pipeline', label: 'Pipeline' });
@@ -487,6 +498,7 @@ function customFlag() {
   if (S.len !== D.settings.length) bits.push(`top ${S.len}`);
   if (S.lateMode === 'exclude') bits.push('late entries excluded');
   if (RK.some(r => JSON.stringify(S.w[r]) !== JSON.stringify(defaultWeights()[r]))) bits.push('custom weights');
+  if (v2Custom()) bits.push('custom MindCET v2 weights');
   return `<div class="custom-flag"><span class="chip accent"><i></i>What-if</span><span>Showing your settings (${esc(bits.join(', '))}), not the sheet's.</span>
     <span class="spacer"></span><button class="btn sm" data-act="reset">Reset to sheet</button>${S.tab !== 'lab' ? '<button class="btn sm" data-act="golab">Open rubric lab</button>' : ''}</div>`;
 }
@@ -639,6 +651,25 @@ VIEWS.shortlists = el => {
   $$('[data-v]', el).forEach(b => b.addEventListener('click', () => { S.slView = b.dataset.v; render(); }));
 };
 
+/* ---------- MindCET v2 */
+const v2max = () => S.v2w.reduce((a, b) => a + b, 0);
+VIEWS.v2 = el => {
+  const V = D.v2, L = D.companies.filter(c => c.$.v2 && c.$.v2.rank != null).sort((a, b) => a.$.v2.rank - b.$.v2.rank);
+  const top = L.filter(c => c.$.v2.rank <= S.len), rows = S.v2View === 'all' ? L : top;
+  const also = top.filter(c => c.$.lists > 0).length, missing = D.companies.filter(c => c.$.ranked && !c.v).length;
+  const rk = (c, r) => { const v = c.$.rank[r]; return v == null ? '–' : v <= S.len ? `<b>${v}</b>` : `<span class="muted">${v}</span>`; };
+  el.innerHTML = `<div class="pagehead"><div><h2>MindCET v2</h2><p class="muted">${esc(V.intro)}</p></div></div>${customFlag()}
+  <div class="filters"><div class="seg" role="group" aria-label="View"><button data-v2="top" aria-pressed="${S.v2View !== 'all'}">Top ${S.len}</button><button data-v2="all" aria-pressed="${S.v2View === 'all'}">All ${L.length} ranked</button></div>
+    <span class="count">${also} of the top ${top.length} are also on one of the three shortlists · ${top.length - also} are not</span></div>
+  <div class="tablewrap"><table><thead><tr><th class="r">v2 #</th><th>Company</th><th>Country</th><th class="r">Score</th>${V.criteria.map(k => `<th class="c" title="${esc(k.label + ': ' + k.desc)}">${esc(k.short)}</th>`).join('')}
+    <th class="r" title="Rank on Shared core + lenses">R1 #</th><th class="r" title="Rank on Evidence of change">R2 #</th><th class="r" title="Rank on Classic">R3 #</th><th class="c" title="On how many of the three shortlists">Lists</th><th>Flags</th></tr></thead><tbody>
+    ${rows.map(c => `<tr class="click" tabindex="0" data-act="open" data-id="${esc(c.id)}"><td class="r">${c.$.v2.rank}</td><td class="name">${esc(c.name)}</td><td>${esc(c.country)}</td>
+      <td class="r"><b>${fmt(c.$.v2.sc, 1)}</b><span class="muted small">/${fmt(v2max(), 0)}</span></td>${c.v.map(v => `<td class="c">${heat(v)}</td>`).join('')}
+      ${RK.map(r => `<td class="r">${rk(c, r)}</td>`).join('')}<td class="c">${dots(c.$.lists)}</td><td>${wcChip(c.wc)} ${lateChip(c)} ${ilChip(c)}</td></tr>`).join('')}</tbody></table></div>
+  <p class="small muted" style="margin-top:14px;max-width:860px">${esc(V.note)}${missing ? ` ${missing} companies that pass the current fit gate have no MindCET v2 scores and are left out.` : ''}</p>`;
+  $$('[data-v2]', el).forEach(b => b.addEventListener('click', () => { S.v2View = b.dataset.v2; render(); }));
+};
+
 /* ---------- Explorer */
 function uniq(arr) { return [...new Set(arr.filter(Boolean))].sort((a, b) => a.localeCompare(b)); }
 function opt(v, label, cur) { return `<option value="${esc(v)}" ${String(cur) === String(v) ? 'selected' : ''}>${esc(label)}</option>`; }
@@ -679,6 +710,7 @@ function drawExplorer() {
   const key = E.sort, dir = E.dir;
   const val = c => {
     if (RK.includes(key)) return c.$.rank[key] ?? 1e9;
+    if (key === 'V2') return (c.$.v2 && c.$.v2.rank) ?? 1e9;
     if (key.startsWith('sc')) return -(c.$.sc[key.slice(2)]);
     if (key.startsWith('c:')) return -c.s[+key.slice(2)];
     if (key === 'lists') return -c.$.lists;
@@ -687,9 +719,9 @@ function drawExplorer() {
   rows.sort((a, b) => { const x = val(a), y = val(b); return (x < y ? -1 : x > y ? 1 : 0) * dir || a.row - b.row; });
   $('#ex-count').textContent = `${rows.length} of ${D.companies.length}`;
   const th = (k, label, cls = '', title = '') => `<th class="sortable ${cls} ${key === k ? 'sorted' : ''}" data-sort="${k}" title="${esc(title || 'Sort')}">${label}${key === k ? (dir > 0 ? ' ↓' : ' ↑') : ''}</th>`;
-  $('#ex-table').innerHTML = `<table><thead><tr>${th('R1', 'R1 #', 'r', 'Rank on rubric 1')}${th('R2', 'R2 #', 'r', 'Rank on rubric 2')}${th('R3', 'R3 #', 'r', 'Rank on rubric 3')}${th('name', 'Company')}${th('country', 'Country')}
+  $('#ex-table').innerHTML = `<table><thead><tr>${th('R1', 'R1 #', 'r', 'Rank on rubric 1')}${th('R2', 'R2 #', 'r', 'Rank on rubric 2')}${th('R3', 'R3 #', 'r', 'Rank on rubric 3')}${D.v2 ? th('V2', 'v2 #', 'r', 'Rank on MindCET v2') : ''}${th('name', 'Company')}${th('country', 'Country')}
     ${C.map((c, i) => th('c:' + i, esc(c.short), 'c', c.label + ' (0–4)')).join('')}${th('scR1', 'R1', 'r', 'Shared core + lenses score')}${th('scR2', 'R2', 'r', 'Evidence of change score')}${th('scR3', 'R3', 'r', 'Classic score')}${th('lists', 'Lists', 'c')}<th>Flags</th></tr></thead>
-    <tbody>${rows.map(c => `<tr class="click" tabindex="0" data-act="open" data-id="${esc(c.id)}">${RK.map(r => `<td class="r">${c.$.rank[r] ?? '<span class="muted">–</span>'}</td>`).join('')}
+    <tbody>${rows.map(c => `<tr class="click" tabindex="0" data-act="open" data-id="${esc(c.id)}">${RK.map(r => `<td class="r">${c.$.rank[r] ?? '<span class="muted">–</span>'}</td>`).join('')}${D.v2 ? `<td class="r">${(c.$.v2 && c.$.v2.rank) ?? '<span class="muted">–</span>'}</td>` : ''}
       <td class="name">${esc(c.name)}</td><td>${esc(c.country)}</td>${c.s.map(v => `<td class="c">${heat(v)}</td>`).join('')}
       ${RK.map(r => `<td class="r">${fmt(c.$.sc[r], 1)}</td>`).join('')}<td class="c">${dots(c.$.lists)}</td><td>${wcChip(c.wc)} ${lateChip(c)} ${ilChip(c)}</td></tr>`).join('')}</tbody></table>`;
   $$('#ex-table th[data-sort]').forEach(h => h.addEventListener('click', () => {
@@ -720,9 +752,16 @@ VIEWS.lab = el => {
     </section>
     <section class="card" style="padding:0;overflow:hidden"><div class="tablewrap" style="border:0;border-radius:0;max-height:none"><table><thead><tr><th>Rubric / lens</th>${C.map(c => `<th class="c" title="${esc(c.label + ': ' + c.measures)}">${esc(c.short)}</th>`).join('')}<th class="r">Total</th></tr></thead><tbody>${rowsHtml}</tbody></table></div></section>
   </div>
+  ${D.v2 ? `<div class="sec"><h3 style="font-size:20px;margin-bottom:12px">MindCET v2 weights</h3><section class="card" style="padding:0;overflow:hidden"><div class="tablewrap" style="border:0;border-radius:0;max-height:none"><table><thead><tr><th>Rubric</th>${D.v2.criteria.map(k => `<th class="c" title="${esc(k.desc)}">${esc(k.short)}</th>`).join('')}<th class="r">Total</th></tr></thead>
+    <tbody><tr><td style="min-width:170px">MindCET v2<div class="small muted">Six criteria, equal weight on the sheet. Changes show on the MindCET v2 tab.</div></td>${S.v2w.map((v, j) => `<td class="c"><input class="w ${v ? '' : 'zero'} ${Math.abs(v - D.v2.w[j]) > 1e-9 ? 'changed' : ''}" type="number" min="0" max="100" step="any" inputmode="decimal" value="${+v.toFixed(2)}" data-v2j="${j}" aria-label="${esc('MindCET v2 — ' + D.v2.criteria[j].label)}" /></td>`).join('')}<td class="r num" id="rt-v2"></td></tr></tbody></table></div></section></div>` : ''}
   <div class="sec"><h3 style="font-size:20px;margin-bottom:12px">What changed against the sheet</h3><div class="grid movers" id="movers"></div></div>`;
   let t;
-  $$('input.w', el).forEach(inp => inp.addEventListener('input', () => {
+  $$('input.w[data-v2j]', el).forEach(inp => inp.addEventListener('input', () => {
+    const v = Math.max(0, Math.min(100, parseFloat(inp.value) || 0)), j = +inp.dataset.v2j;
+    S.v2w[j] = v; inp.classList.toggle('zero', !v); inp.classList.toggle('changed', Math.abs(v - D.v2.w[j]) > 1e-9);
+    clearTimeout(t); t = setTimeout(() => { compute(S); persist(); labTotals(); refreshFlag(); }, 120);
+  }));
+  $$('input.w[data-r]', el).forEach(inp => inp.addEventListener('input', () => {
     const v = Math.max(0, Math.min(100, parseFloat(inp.value) || 0));
     S.w[inp.dataset.r][+inp.dataset.i][+inp.dataset.j] = v;
     inp.classList.toggle('zero', !v);
@@ -747,6 +786,7 @@ function labTotals() {
     const tot = maxScore(r), n = $('#tot-' + r);
     if (n) n.innerHTML = `— scores out of ${fmt(tot, 1)}${Math.abs(tot - 100) > 0.01 ? ' <span class="warnline">(weights do not add up to 100)</span>' : ''}`;
   });
+  const n2 = $('#rt-v2'); if (n2) { const t2 = v2max(); n2.innerHTML = fmt(t2, 1) + (Math.abs(t2 - 100) > 0.01 ? ' <span class="warnline">(not 100)</span>' : ''); }
   const rc = $('#ranked-count'); if (rc) rc.textContent = `${S.nRanked} companies ranked with these settings.`;
 }
 function drawMovers() {
@@ -881,6 +921,8 @@ VIEWS.method = el => {
     ${weights}${lenses}
     <div class="sec"><h3>Criterion anchors (score 0–4)</h3><div class="tablewrap simple-table"><table class="plain anchors"><thead><tr><th>Criterion</th>${[0, 1, 2, 3, 4].map(i => `<th>${i}</th>`).join('')}</tr></thead><tbody>
       ${C.map(c => `<tr><td><b>${esc(c.label)}</b><div class="small muted">${esc(c.measures)}</div></td>${c.levels.map(l => `<td>${esc(l)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>
+    ${D.v2 ? `<div class="sec"><h3>MindCET v2 rubric</h3><p>${esc(D.v2.note)}</p><div class="tablewrap simple-table"><table class="plain anchors"><thead><tr><th>Criterion</th><th>0–1 Weak</th><th>2 Adequate</th><th>3 Strong</th><th>4 Exceptional</th><th class="r">Weight</th></tr></thead><tbody>
+      ${D.v2.criteria.map((k, i) => `<tr><td><b>${esc(k.label)}</b><div class="small muted">${esc(k.desc)}</div></td>${k.levels.map(l => `<td>${esc(l)}</td>`).join('')}<td class="r num">${fmt(D.v2.w[i], 1)}</td></tr>`).join('')}</tbody></table></div></div>` : ''}
     <div class="sec"><h3>Light web check</h3>${list(M.webcheck)}</div>
     <div class="sec"><h3>Before anything goes public</h3>${list(M.caveats)}</div>
   </div>`;
@@ -915,6 +957,13 @@ function openCompany(id) {
     h += `<div class="sec"><h3>Criterion scores</h3>${C.map((cr, i) => { const v = c.s[i]; return `<div class="crit"><span class="n" title="${esc(cr.measures)}">${esc(cr.label)}</span>
       <span class="pips" aria-label="${v} of 4">${[1, 2, 3, 4].map(k => `<i class="${k <= v ? 'on' : ''}"></i>`).join('')}<b>${fmt(v, 0)}</b>${c.prev && c.prev[i] !== v ? `<span class="was" title="Score on 3 Nov">was ${c.prev[i]}</span>` : ''}</span><span class="a">${esc(cr.levels[v] || '')}</span></div>`; }).join('')}
       <p class="small muted">Scores are a reviewer's judgement of self-reported answers, not facts.</p></div>`;
+    if (D.v2 && c.v && c.$.v2) { const r2 = c.$.v2;
+      h += `<div class="sec"><h3>MindCET v2</h3><div class="rub"><span>Six criteria</span><span class="num"><b>${fmt(r2.sc, 1)}</b><span class="muted small">/${fmt(v2max(), 0)}</span></span>
+        <span class="small num">${r2.rank ? `#${r2.rank} of ${S.nV2} ${r2.rank <= S.len ? '<span class="chip accent">top ' + S.len + '</span>' : ''}` : '<span class="muted">not ranked</span>'}</span></div>
+        ${D.v2.criteria.map((k, i) => { const v = c.v[i]; return `<div class="crit"><span class="n" title="${esc(k.desc)}">${esc(k.label)}</span>
+        <span class="pips" aria-label="${v} of 4">${[1, 2, 3, 4].map(n => `<i class="${n <= v ? 'on' : ''}"></i>`).join('')}<b>${fmt(v, 0)}</b></span><span class="a">${esc(k.levels[Math.max(0, v - 1)] || '')}</span></div>`; }).join('')}
+        ${c.vux && c.vux !== 'described' ? `<p class="small muted">User experience is judged from the application text only, and here the text ${c.vux === 'none' ? 'says nothing about' : 'gives only hints of'} how the product is used. The product video was not watched.</p>` : ''}
+        ${F.internal && c.vwhy ? `<p class="small" style="margin:8px 0 0"><b>Reviewer reasoning:</b> ${esc(c.vwhy)}</p>` : ''}</div>`; }
     if (c.wc && !c.wc.startsWith('Not checked')) h += `<div class="sec"><h3>Web check</h3><p style="margin:0 0 8px">${wcChip(c.wc)}</p>${c.wcNote ? `<p style="margin:0 0 6px">${esc(c.wcNote)}</p>` : ''}${c.wcSrc ? `<p class="small" style="margin:0">Source: ${safeLink(c.wcSrc)}</p>` : ''}</div>`;
   } else {
     h += `<div class="sec"><p class="muted">Not scored for the track${p && !p.track ? ' (not a workforce or lifelong-learning applicant)' : ''}.</p></div>`;

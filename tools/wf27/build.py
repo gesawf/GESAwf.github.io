@@ -303,7 +303,33 @@ def read_workbook(path):
                                   "problem": txt(d.get("Problem")), "product": txt(d.get("Product")), "team": txt(d.get("Team")),
                                   "traction": txt(d.get("Traction")), "video": txt(d.get("Product video")), "deck": txt(d.get("Pitch deck"))}
 
-    return {"rescore": rescore, "rescoreTitle": rescore_title, "apps": apps,
+    # --- MindCET v2 (optional): a separate six-criterion rubric with its own scores
+    v2 = None
+    if "MindCET v2" in wb.sheetnames:
+        g2 = [list(r) for r in wb["MindCET v2"].iter_rows(values_only=True)]
+        ic = next(i for i, r in enumerate(g2) if txt(r[0]) == "Criterion")
+        iw = next(i for i, r in enumerate(g2) if txt(r[0]).startswith("Weights"))
+        ih = next(i for i, r in enumerate(g2) if txt(r[0]) == "ID")
+        keys = ["pain", "pedagogy", "ux", "evidence", "viability", "growth"]
+        crit2 = [{"key": k, "label": txt(r[0]), "short": txt(r[1]), "desc": txt(r[2]), "levels": [txt(x) for x in r[3:7]]}
+                 for k, r in zip(keys, g2[ic + 1:ic + 7])]
+        hdr2 = [txt(x) for x in g2[ih]]
+        srows = {}
+        for r in g2[ih + 1:]:
+            if not r or not txt(r[0]):
+                continue
+            d = dict(zip(hdr2, r))
+            vals = [num(x) for x in r[2:8]]
+            if any(x is None for x in vals):
+                die(f'{txt(r[0])} has a blank MindCET v2 score.')
+            srows[txt(r[0])] = {"v": [int(x) for x in vals], "ux": txt(d.get("UX basis")),
+                                "why": txt(d.get("Reviewer reasoning (internal)")), "_rank": d.get("Rank")}
+        v2 = {"criteria": crit2, "w": [num(x) or 0.0 for x in g2[iw][2:8]], "scores": srows,
+              "intro": "A fourth rubric from MindCET: six criteria (pain point, pedagogy, user experience, evidence of change, "
+                       "product viability, growth potential), equal weight, scored separately from the ten criteria behind the three shortlists.",
+              "note": txt(g2[1][0])}
+
+    return {"v2": v2, "rescore": rescore, "rescoreTitle": rescore_title, "apps": apps,
             "rubrics": rubrics, "criteria": criteria, "settings": settings, "scored": scored,
             "pipeline": pipeline, "readme": readme_lines, "keyCounts": key_counts, "source": source_line,
             "changes": changes}
@@ -353,6 +379,19 @@ def self_check(wbdata):
                 bad.append(f'{c["id"]} {r} rank {v[r]} vs sheet {sh[r]}')
         if v["lists"] != sh["lists"]:
             bad.append(f'{c["id"]} lists {v["lists"]} vs sheet {sh["lists"]}')
+    v2 = wbdata.get("v2")
+    if v2:  # MindCET v2: same gate, ties on Evidence of change then Product viability then sheet row
+        rows = {c["id"]: c["row"] for c in wbdata["scored"]}
+        keyv = {}
+        for cid, d in v2["scores"].items():
+            if cid in res and res[cid]["ranked"]:
+                sc2 = sum(w * x for w, x in zip(v2["w"], d["v"])) / 4
+                keyv[cid] = sc2 + d["v"][3] / 100 + d["v"][4] / 1000 + (1000 - rows[cid]) / 1e7
+        for cid, d in v2["scores"].items():
+            mine = (1 + sum(1 for k in keyv.values() if k > keyv[cid])) if cid in keyv else None
+            sheet = int(d["_rank"]) if d["_rank"] not in (None, "") else None
+            if mine != sheet:
+                bad.append(f"{cid} MindCET v2 rank {mine} vs sheet {sheet}")
     if bad:
         die("Recomputed ranks differ from the sheet — the dashboard would disagree with it:\n  " + "\n  ".join(bad[:20]))
     return res
@@ -485,6 +524,21 @@ def method_block(w, audience):
     return m
 
 
+def v2_fields(w, c, internal):
+    d = (w["v2"] or {}).get("scores", {}).get(c["id"]) if w.get("v2") else None
+    if not d:
+        return {}
+    out = {"v": d["v"], "vux": d["ux"]}
+    if internal:
+        out["vwhy"] = d["why"]
+    return out
+
+
+def v2_block(w):
+    v2 = w.get("v2")
+    return {"criteria": v2["criteria"], "w": v2["w"], "intro": v2["intro"], "note": v2["note"]} if v2 else None
+
+
 def build_payloads(w, res):
     gen = dt.datetime.now().strftime("%Y-%m-%d %H:%M")
     P, S = w["pipeline"], w["scored"]
@@ -500,7 +554,8 @@ def build_payloads(w, res):
                          "revenue": True, "issues": True, "il": True, "contacts": aud == "core", "csv": True,
                          "gateMin": 0, "highlights": False, "internal": True, "apptext": bool(w["apps"])},
             **base_rubric,
-            "companies": [dict(pick(c, SCORED_FIELDS[aud]), prev=(w["rescore"].get(c["id"]) or {}).get("prev")) for c in S],
+            "companies": [dict(pick(c, SCORED_FIELDS[aud]), prev=(w["rescore"].get(c["id"]) or {}).get("prev"), **v2_fields(w, c, True)) for c in S],
+            "v2": v2_block(w),
             "apps": w["apps"],
             "rescore": [dict(v, id=k) for k, v in w["rescore"].items()
                         if v["status"] and v["status"] != "No change" and (v["status"] != "Scored for the first time" or v["listsNow"] not in ("", "0"))],
@@ -518,7 +573,8 @@ def build_payloads(w, res):
                      "revenue": False, "issues": False, "il": False, "contacts": False, "csv": False,
                      "gateMin": w["settings"]["gate"], "highlights": False},
         **base_rubric,
-        "companies": [pick(c, SCORED_FIELDS["jury"]) for c in ranked],
+        "companies": [dict(pick(c, SCORED_FIELDS["jury"]), **v2_fields(w, c, False)) for c in ranked],
+        "v2": v2_block(w),
         "keyCounts": [{"label": "Applications received (unique companies)", "value": str(len(P))},
                       {"label": "Scored for the track", "value": str(len(S))},
                       {"label": "Ranked (pass the Workforce-fit gate)", "value": str(len(ranked))}],
