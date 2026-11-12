@@ -216,6 +216,7 @@ def read_workbook(path):
             "il": yes(d["Israeli semifinal candidate"]),
             "conc": txt(d.get("Internal concerns (reviewer)")), "claim": txt(d.get("Claim to verify")),
             "conf": txt(d.get("Reviewer confidence")),
+            "seg": txt(d.get("Prize segment")), "em": txt(d.get("Emerging market")).lower() in ("yes", "y", "true"),
             "_sheet": {"ranked": yes(d["Ranked?"]), "R1": d["R1 rank"], "R2": d["R2 rank"], "R3": d["R3 rank"],
                        "lists": int(num(d[LK]) or 0)},
         })
@@ -484,7 +485,7 @@ SCORED_FIELDS = {
     "core": ["id", "row", "name", "country", "region", "late", "s", "revenue", "funding", "stage", "model", "website",
              "note", "wc", "wcNote", "wcSrc", "issues", "il", "conc", "claim", "conf"],
     "organisers": ["id", "row", "name", "country", "region", "late", "s", "revenue", "funding", "stage", "model",
-                   "website", "note", "wc", "wcNote", "wcSrc", "issues", "il", "conc", "claim", "conf"],
+                   "website", "note", "wc", "wcNote", "wcSrc", "issues", "il", "conc", "claim", "conf", "seg", "em"],
     "jury": ["id", "row", "name", "country", "region", "late", "s", "stage", "website", "note", "wc", "wcNote", "wcSrc"],
 }
 PIPELINE_FIELDS = {
