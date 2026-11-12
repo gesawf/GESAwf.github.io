@@ -163,8 +163,9 @@
   .count { font-size: 13px; color: var(--muted); margin-left: auto; }
 
   /* shortlists */
-  .sl3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  @media (max-width: 1000px) { .sl3 { grid-template-columns: 1fr; } }
+  .sl3 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  @media (max-width: 1300px) { .sl3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 700px) { .sl3 { grid-template-columns: 1fr; } }
   .slist { list-style: none; margin: 0; padding: 0; }
   .slist li { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: center; padding: 8px 6px; border-top: 1px solid var(--line); cursor: pointer; border-radius: 6px; }
   .slist li:hover { background: color-mix(in srgb, var(--body) 4%, transparent); }
@@ -405,7 +406,7 @@ function defaults() {
   return { w: D.companies ? defaultWeights() : {}, gate: st.gate ?? 3, len: st.length ?? 30, lateMode: 'include', tab: null,
     ex: { q: '', region: '', wc: '', lists: '', late: '', ranked: 'ranked', il: '', sort: 'R1', dir: 1 },
     pl: { q: '', region: '', track: '', scored: '', late: '', stage: '', issue: '', il: '', sort: 'name', dir: 1 },
-    slView: 'side', v2View: 'top', v2w: D.v2 ? D.v2.w.slice() : null };
+    slView: 'side', v2w: D.v2 ? D.v2.w.slice() : null };
 }
 function clampState() {
   const dw = defaultWeights();
@@ -453,7 +454,6 @@ function compute(st) {
       c.$.rank[r] = lo + 1;
     });
   });
-  list.forEach(c => c.$.lists = RK.filter(r => c.$.rank[r] != null && c.$.rank[r] <= st.len).length);
   S.nRanked = ranked.length;
   if (D.v2) {  // MindCET v2: same gate; ties break on Evidence of change, then Product viability, then sheet row
     const w2 = st.v2w || D.v2.w, iE = D.v2.criteria.findIndex(k => k.key === 'evidence'), iV = D.v2.criteria.findIndex(k => k.key === 'viability');
@@ -463,6 +463,7 @@ function compute(st) {
     L2.forEach(c => { c.$.v2.rank = 1 + L2.filter(o => o.$.v2.key > c.$.v2.key).length; });
     S.nV2 = L2.length;
   }
+  list.forEach(c => c.$.lists = RK.filter(r => c.$.rank[r] != null && c.$.rank[r] <= st.len).length + (c.$.v2 && c.$.v2.rank != null && c.$.v2.rank <= st.len ? 1 : 0));
 }
 const maxScore = r => S.w[r].reduce((a, row) => a + row.reduce((x, y) => x + y, 0), 0);
 
@@ -472,7 +473,6 @@ function buildTabs() {
   TABS = [{ id: 'overview', label: 'Overview' }];
   if (F.highlights) TABS.push({ id: 'highlights', label: 'Highlighted companies' });
   if (F.shortlists) TABS.push({ id: 'shortlists', label: 'Shortlists & overlap' });
-  if (D.v2 && D.companies) TABS.push({ id: 'v2', label: 'MindCET v2' });
   if (F.explorer) TABS.push({ id: 'explorer', label: 'All scores' });
   if (F.reweight) TABS.push({ id: 'lab', label: 'Rubric lab' });
   if (F.pipeline) TABS.push({ id: 'pipeline', label: 'Pipeline' });
@@ -520,10 +520,11 @@ function wcChip(wc) {
 }
 const lateChip = c => c.late ? '<span class="chip warn" title="Submitted after the 15 Sept close">Late</span>' : '';
 const ilChip = c => (F.il && c.il) ? '<span class="chip accent" title="Israeli semifinal candidate">IL semifinal</span>' : '';
-const dots = n => `<span class="dots" title="On ${n} of 3 shortlists" aria-label="On ${n} of 3 shortlists">${[0, 1, 2].map(i => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span>`;
+const NL = () => D.v2 ? 4 : 3;
+const dots = n => `<span class="dots" title="On ${n} of ${NL()} shortlists" aria-label="On ${n} of ${NL()} shortlists">${[...Array(NL()).keys()].map(i => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span>`;
 function deltaBadge(c, r) {
   if (!F.reweight || !isCustom()) return '';
-  const now = c.$.rank[r], was = BASE[c.id][r];
+  const now = r === 'V2' ? (c.$.v2 ? c.$.v2.rank : null) : c.$.rank[r], was = BASE[c.id][r];
   if (now == null) return '';
   if (was == null || was > D.settings.length) return '<span class="delta new" title="Not on the sheet\'s shortlist">new</span>';
   const d = was - now;
@@ -601,10 +602,10 @@ VIEWS.overview = el => {
   let html = `<div class="pagehead"><div><h2>Overview</h2><p class="muted">${esc(intro)}</p></div></div>${customFlag()}<div class="grid kpis">`;
   html += kpis.map(k => `<div class="kpi"><div class="v num">${esc(String(k.value).replace(/\.0$/, ''))}</div><div class="l">${esc(k.label)}</div></div>`).join('');
   if (D.companies && F.shortlists) {
-    const on1 = D.companies.filter(c => c.$.lists >= 1).length, on3 = D.companies.filter(c => c.$.lists === 3).length;
+    const on1 = D.companies.filter(c => c.$.lists >= 1).length, onAll = D.companies.filter(c => c.$.lists === NL()).length;
     const live = isCustom() ? ' (your settings)' : '';
     html += `<div class="kpi ${live ? 'live' : ''}"><div class="v num">${on1}</div><div class="l">On at least one top-${S.len} shortlist${live}</div></div>
-             <div class="kpi ${live ? 'live' : ''}"><div class="v num">${on3}</div><div class="l">On all three shortlists${live}</div></div>`;
+             <div class="kpi ${live ? 'live' : ''}"><div class="v num">${onAll}</div><div class="l">On all ${NL() === 4 ? 'four' : 'three'} shortlists${live}</div></div>`;
   }
   html += `</div><div class="grid charts">${(D.charts || []).map(ch => chartCard(ch)).join('')}</div>`;
   el.innerHTML = html;
@@ -613,7 +614,7 @@ VIEWS.overview = el => {
 /* ---------- Highlights (sponsors) */
 VIEWS.highlights = el => {
   const H = D.highlights || [], m = D.lensMax || {};
-  el.innerHTML = `<div class="pagehead"><div><h2>Highlighted companies</h2><p class="muted">These ${H.length} companies are on all three shortlists, and a light independent web check confirmed the company and at least one of its claims. Listed in order of the shared-core rubric.</p></div></div>
+  el.innerHTML = `<div class="pagehead"><div><h2>Highlighted companies</h2><p class="muted">These ${H.length} companies are on all ${NL() === 4 ? 'four' : 'three'} shortlists, and a light independent web check confirmed the company and at least one of its claims. Listed in order of the shared-core rubric.</p></div></div>
   <div class="grid hl">${H.map(h => `<article class="card"><h3 style="font-size:21px">${esc(h.name)}</h3>
     <div class="meta-line">${esc(h.country)} · ${esc(h.region)}${h.stage ? ' · ' + esc(h.stage) : ''} ${wcChip(h.wc)}</div>
     <p style="margin:12px 0">${esc(h.note)}</p>
@@ -625,50 +626,38 @@ VIEWS.highlights = el => {
 
 /* ---------- Shortlists */
 VIEWS.shortlists = el => {
-  const L = D.companies;
-  const top = r => L.filter(c => c.$.rank[r] != null && c.$.rank[r] <= S.len).sort((a, b) => a.$.rank[r] - b.$.rank[r]);
+  const L = D.companies, N = NL(), WORD = N === 4 ? 'four' : 'three';
+  const rkOf = (c, r) => r === 'V2' ? (c.$.v2 ? c.$.v2.rank : null) : c.$.rank[r];
+  const top = r => L.filter(c => rkOf(c, r) != null && rkOf(c, r) <= S.len).sort((a, b) => rkOf(a, r) - rkOf(b, r));
   const on = n => L.filter(c => c.$.lists === n).length;
-  let html = `<div class="pagehead"><div><h2>Shortlists & overlap</h2><p class="muted">Top ${S.len} on each rubric, out of ${S.nRanked} ranked companies. Companies on all three lists are the safest names to highlight first.</p></div></div>${customFlag()}
+  const keys = D.v2 ? [...RK, 'V2'] : RK;
+  const counts = N === 4 ? `${on(4)} on all four · ${on(3)} on three · ${on(2)} on two · ${on(1)} on one` : `${on(3)} on all three · ${on(2)} on two · ${on(1)} on one`;
+  let html = `<div class="pagehead"><div><h2>Shortlists & overlap</h2><p class="muted">Top ${S.len} on each of the ${WORD} rubrics${D.v2 ? ' (three rubrics plus MindCET v2)' : ''}, out of ${S.nRanked} ranked companies. Companies on all ${WORD} lists are the safest names to highlight first.</p></div></div>${customFlag()}
     <div class="filters"><div class="seg" role="group" aria-label="View"><button data-v="side" aria-pressed="${S.slView === 'side'}">Side by side</button><button data-v="overlap" aria-pressed="${S.slView === 'overlap'}">Overlap</button></div>
-    <span class="count">${on(3)} on all three · ${on(2)} on two · ${on(1)} on one</span></div>`;
+    <span class="count">${counts}</span></div>`;
   if (S.slView === 'side') {
-    html += `<div class="grid sl3">${RK.map(r => {
-      const rb = D.rubrics[r], mx = maxScore(r);
-      const q = r === 'R1' ? 'A shared core plus one lens per stakeholder.' : rb.rows[0].question;
-      return `<section class="card"><h3>${r.slice(1)} · ${esc(rb.name)}</h3><p class="q">${esc(q)}</p><ol class="slist">${top(r).map(c => `
-        <li tabindex="0" data-act="open" data-id="${esc(c.id)}"><span class="rk">${c.$.rank[r]}</span><div style="min-width:0"><div class="nm">${esc(c.name)}</div>
+    html += `<div class="grid sl3">${keys.map(r => {
+      const v = r === 'V2', rb = v ? null : D.rubrics[r], mx = v ? v2max() : maxScore(r);
+      const q = v ? 'Pain point, pedagogy, UX, evidence, viability and growth, equal weight.' : r === 'R1' ? 'A shared core plus one lens per stakeholder.' : rb.rows[0].question;
+      const sc = c => v ? c.$.v2.sc : c.$.sc[r];
+      return `<section class="card"><h3>${v ? '4 · MindCET v2' : r.slice(1) + ' · ' + esc(rb.name)}</h3><p class="q">${esc(q)}</p><ol class="slist">${top(r).map(c => `
+        <li tabindex="0" data-act="open" data-id="${esc(c.id)}"><span class="rk">${rkOf(c, r)}</span><div style="min-width:0"><div class="nm">${esc(c.name)}</div>
         <div class="sub">${esc(c.country)} ${dots(c.$.lists)} ${wcChip(c.wc)} ${lateChip(c)} ${ilChip(c)}</div></div>
-        <div class="sc"><div class="num">${fmt(c.$.sc[r], 1)}<span class="muted small">/${fmt(mx, 0)}</span></div>${deltaBadge(c, r)}</div></li>`).join('')}</ol></section>`;
+        <div class="sc"><div class="num">${fmt(sc(c), 1)}<span class="muted small">/${fmt(mx, 0)}</span></div>${deltaBadge(c, r)}</div></li>`).join('')}</ol></section>`;
     }).join('')}</div>`;
   } else {
-    const rows = L.filter(c => c.$.lists > 0).sort((a, b) => b.$.lists - a.$.lists || ((b.$.sc.R1 + b.$.sc.R2 + b.$.sc.R3) - (a.$.sc.R1 + a.$.sc.R2 + a.$.sc.R3)) || a.row - b.row);
-    const rk = (c, r) => { const v = c.$.rank[r]; return v == null ? '–' : v <= S.len ? `<b>${v}</b>` : `<span class="muted">${v}</span>`; };
-    html += `<div class="tablewrap"><table><thead><tr><th class="r">#</th><th>Company</th><th>Country</th><th class="c">Lists</th><th class="r">R1 rank</th><th class="r">R2 rank</th><th class="r">R3 rank</th><th>Web check</th><th>Why it stands out</th></tr></thead><tbody>
+    const avg = c => c.$.sc.R1 + c.$.sc.R2 + c.$.sc.R3 + (c.$.v2 ? c.$.v2.sc : 0);
+    const rows = L.filter(c => c.$.lists > 0).sort((a, b) => b.$.lists - a.$.lists || (avg(b) - avg(a)) || a.row - b.row);
+    const rk = (c, r) => { const v = rkOf(c, r); return v == null ? '–' : v <= S.len ? `<b>${v}</b>` : `<span class="muted">${v}</span>`; };
+    html += `<div class="tablewrap"><table><thead><tr><th class="r">#</th><th>Company</th><th>Country</th><th class="c">Lists</th><th class="r">R1 rank</th><th class="r">R2 rank</th><th class="r">R3 rank</th>${D.v2 ? '<th class="r">v2 rank</th>' : ''}<th>Web check</th><th>Why it stands out</th></tr></thead><tbody>
       ${rows.map((c, i) => `<tr class="click" tabindex="0" data-act="open" data-id="${esc(c.id)}"><td class="r muted">${i + 1}</td><td class="name">${esc(c.name)} ${lateChip(c)} ${ilChip(c)}</td><td>${esc(c.country)}</td><td class="c">${dots(c.$.lists)}</td>
-        <td class="r">${rk(c, 'R1')}</td><td class="r">${rk(c, 'R2')}</td><td class="r">${rk(c, 'R3')}</td><td>${wcChip(c.wc)}</td><td class="wrap muted">${esc(c.note)}</td></tr>`).join('')}</tbody></table></div>`;
+        <td class="r">${rk(c, 'R1')}</td><td class="r">${rk(c, 'R2')}</td><td class="r">${rk(c, 'R3')}</td>${D.v2 ? `<td class="r">${rk(c, 'V2')}</td>` : ''}<td>${wcChip(c.wc)}</td><td class="wrap muted">${esc(c.note)}</td></tr>`).join('')}</tbody></table></div>`;
   }
   el.innerHTML = html;
   $$('[data-v]', el).forEach(b => b.addEventListener('click', () => { S.slView = b.dataset.v; render(); }));
 };
 
-/* ---------- MindCET v2 */
 const v2max = () => S.v2w.reduce((a, b) => a + b, 0);
-VIEWS.v2 = el => {
-  const V = D.v2, L = D.companies.filter(c => c.$.v2 && c.$.v2.rank != null).sort((a, b) => a.$.v2.rank - b.$.v2.rank);
-  const top = L.filter(c => c.$.v2.rank <= S.len), rows = S.v2View === 'all' ? L : top;
-  const also = top.filter(c => c.$.lists > 0).length, missing = D.companies.filter(c => c.$.ranked && !c.v).length;
-  const rk = (c, r) => { const v = c.$.rank[r]; return v == null ? '–' : v <= S.len ? `<b>${v}</b>` : `<span class="muted">${v}</span>`; };
-  el.innerHTML = `<div class="pagehead"><div><h2>MindCET v2</h2><p class="muted">${esc(V.intro)}</p></div></div>${customFlag()}
-  <div class="filters"><div class="seg" role="group" aria-label="View"><button data-v2="top" aria-pressed="${S.v2View !== 'all'}">Top ${S.len}</button><button data-v2="all" aria-pressed="${S.v2View === 'all'}">All ${L.length} ranked</button></div>
-    <span class="count">${also} of the top ${top.length} are also on one of the three shortlists · ${top.length - also} are not</span></div>
-  <div class="tablewrap"><table><thead><tr><th class="r">v2 #</th><th>Company</th><th>Country</th><th class="r">Score</th>${V.criteria.map(k => `<th class="c" title="${esc(k.label + ': ' + k.desc)}">${esc(k.short)}</th>`).join('')}
-    <th class="r" title="Rank on Shared core + lenses">R1 #</th><th class="r" title="Rank on Evidence of change">R2 #</th><th class="r" title="Rank on Classic">R3 #</th><th class="c" title="On how many of the three shortlists">Lists</th><th>Flags</th></tr></thead><tbody>
-    ${rows.map(c => `<tr class="click" tabindex="0" data-act="open" data-id="${esc(c.id)}"><td class="r">${c.$.v2.rank}</td><td class="name">${esc(c.name)}</td><td>${esc(c.country)}</td>
-      <td class="r"><b>${fmt(c.$.v2.sc, 1)}</b><span class="muted small">/${fmt(v2max(), 0)}</span></td>${c.v.map(v => `<td class="c">${heat(v)}</td>`).join('')}
-      ${RK.map(r => `<td class="r">${rk(c, r)}</td>`).join('')}<td class="c">${dots(c.$.lists)}</td><td>${wcChip(c.wc)} ${lateChip(c)} ${ilChip(c)}</td></tr>`).join('')}</tbody></table></div>
-  <p class="small muted" style="margin-top:14px;max-width:860px">${esc(V.note)}${missing ? ` ${missing} companies that pass the current fit gate have no MindCET v2 scores and are left out.` : ''}</p>`;
-  $$('[data-v2]', el).forEach(b => b.addEventListener('click', () => { S.v2View = b.dataset.v2; render(); }));
-};
 
 /* ---------- Explorer */
 function uniq(arr) { return [...new Set(arr.filter(Boolean))].sort((a, b) => a.localeCompare(b)); }
@@ -676,11 +665,11 @@ function opt(v, label, cur) { return `<option value="${esc(v)}" ${String(cur) ==
 VIEWS.explorer = el => {
   const L = D.companies, E = S.ex;
   const regions = uniq(L.map(c => c.region)), wcs = uniq(L.map(c => c.wc));
-  el.innerHTML = `<div class="pagehead"><div><h2>All scores</h2><p class="muted">${F.gateMin ? 'Every ranked company' : 'Every scored applicant'} with its ten criterion scores (0–4) and three rubric totals. Click a row for the full profile and the anchor behind each score.</p></div></div>${customFlag()}
+  el.innerHTML = `<div class="pagehead"><div><h2>All scores</h2><p class="muted">${F.gateMin ? 'Every ranked company' : 'Every scored applicant'} with its ten criterion scores (0–4) and ${D.v2 ? 'four' : 'three'} rubric totals. Click a row for the full profile and the anchor behind each score.</p></div></div>${customFlag()}
   <div class="filters">
     <input class="field" id="ex-q" type="search" placeholder="Search company, country, note…" value="${esc(E.q)}" aria-label="Search" />
     <select class="field" id="ex-region" aria-label="Region">${opt('', 'All regions', E.region)}${regions.map(r => opt(r, r, E.region)).join('')}</select>
-    <select class="field" id="ex-lists" aria-label="Shortlists">${opt('', 'Any shortlist status', E.lists)}${opt('3', 'On all three', E.lists)}${opt('2+', 'On two or more', E.lists)}${opt('1+', 'On at least one', E.lists)}${opt('0', 'On none', E.lists)}</select>
+    <select class="field" id="ex-lists" aria-label="Shortlists">${opt('', 'Any shortlist status', E.lists)}${opt('4', D.v2 ? 'On all four' : 'On all three', E.lists)}${opt('2+', 'On two or more', E.lists)}${opt('1+', 'On at least one', E.lists)}${opt('0', 'On none', E.lists)}</select>
     <select class="field" id="ex-wc" aria-label="Web check">${opt('', 'Any web check', E.wc)}${wcs.map(r => opt(r, r, E.wc)).join('')}</select>
     <select class="field" id="ex-late" aria-label="Late entries">${opt('', 'Late and on time', E.late)}${opt('hide', 'Hide late entries', E.late)}${opt('only', 'Late entries only', E.late)}</select>
     ${F.gateMin ? '' : `<select class="field" id="ex-ranked" aria-label="Ranked">${opt('ranked', 'Ranked only', E.ranked)}${opt('all', 'All scored', E.ranked)}${opt('unranked', 'Not ranked (below fit gate)', E.ranked)}</select>`}
@@ -701,7 +690,7 @@ function drawExplorer() {
     if (E.late === 'only' && !c.late) return false;
     if (E.il === 'yes' && !c.il) return false;
     if (!F.gateMin) { if (E.ranked === 'ranked' && !c.$.ranked) return false; if (E.ranked === 'unranked' && c.$.ranked) return false; }
-    if (E.lists === '3' && c.$.lists !== 3) return false;
+    if (E.lists === '4' && c.$.lists !== NL()) return false;
     if (E.lists === '2+' && c.$.lists < 2) return false;
     if (E.lists === '1+' && c.$.lists < 1) return false;
     if (E.lists === '0' && c.$.lists !== 0) return false;
@@ -753,13 +742,13 @@ VIEWS.lab = el => {
     <section class="card" style="padding:0;overflow:hidden"><div class="tablewrap" style="border:0;border-radius:0;max-height:none"><table><thead><tr><th>Rubric / lens</th>${C.map(c => `<th class="c" title="${esc(c.label + ': ' + c.measures)}">${esc(c.short)}</th>`).join('')}<th class="r">Total</th></tr></thead><tbody>${rowsHtml}</tbody></table></div></section>
   </div>
   ${D.v2 ? `<div class="sec"><h3 style="font-size:20px;margin-bottom:12px">MindCET v2 weights</h3><section class="card" style="padding:0;overflow:hidden"><div class="tablewrap" style="border:0;border-radius:0;max-height:none"><table><thead><tr><th>Rubric</th>${D.v2.criteria.map(k => `<th class="c" title="${esc(k.desc)}">${esc(k.short)}</th>`).join('')}<th class="r">Total</th></tr></thead>
-    <tbody><tr><td style="min-width:170px">MindCET v2<div class="small muted">Six criteria, equal weight on the sheet. Changes show on the MindCET v2 tab.</div></td>${S.v2w.map((v, j) => `<td class="c"><input class="w ${v ? '' : 'zero'} ${Math.abs(v - D.v2.w[j]) > 1e-9 ? 'changed' : ''}" type="number" min="0" max="100" step="any" inputmode="decimal" value="${+v.toFixed(2)}" data-v2j="${j}" aria-label="${esc('MindCET v2 — ' + D.v2.criteria[j].label)}" /></td>`).join('')}<td class="r num" id="rt-v2"></td></tr></tbody></table></div></section></div>` : ''}
+    <tbody><tr><td style="min-width:170px">MindCET v2<div class="small muted">Six criteria, equal weight on the sheet. Changes feed the fourth shortlist.</div></td>${S.v2w.map((v, j) => `<td class="c"><input class="w ${v ? '' : 'zero'} ${Math.abs(v - D.v2.w[j]) > 1e-9 ? 'changed' : ''}" type="number" min="0" max="100" step="any" inputmode="decimal" value="${+v.toFixed(2)}" data-v2j="${j}" aria-label="${esc('MindCET v2 — ' + D.v2.criteria[j].label)}" /></td>`).join('')}<td class="r num" id="rt-v2"></td></tr></tbody></table></div></section></div>` : ''}
   <div class="sec"><h3 style="font-size:20px;margin-bottom:12px">What changed against the sheet</h3><div class="grid movers" id="movers"></div></div>`;
   let t;
   $$('input.w[data-v2j]', el).forEach(inp => inp.addEventListener('input', () => {
     const v = Math.max(0, Math.min(100, parseFloat(inp.value) || 0)), j = +inp.dataset.v2j;
     S.v2w[j] = v; inp.classList.toggle('zero', !v); inp.classList.toggle('changed', Math.abs(v - D.v2.w[j]) > 1e-9);
-    clearTimeout(t); t = setTimeout(() => { compute(S); persist(); labTotals(); refreshFlag(); }, 120);
+    clearTimeout(t); t = setTimeout(() => { compute(S); persist(); labTotals(); drawMovers(); refreshFlag(); }, 120);
   }));
   $$('input.w[data-r]', el).forEach(inp => inp.addEventListener('input', () => {
     const v = Math.max(0, Math.min(100, parseFloat(inp.value) || 0));
@@ -792,16 +781,16 @@ function labTotals() {
 function drawMovers() {
   const box = $('#movers'); if (!box) return;
   if (!isCustom()) { box.innerHTML = '<p class="muted" style="grid-column:1/-1;margin:0">No changes yet. Edit a weight or a setting to see who enters and leaves each shortlist.</p>'; return; }
-  box.innerHTML = RK.map(r => {
-    const L = D.companies;
-    const inNow = L.filter(c => c.$.rank[r] != null && c.$.rank[r] <= S.len);
+  box.innerHTML = (D.v2 ? [...RK, 'V2'] : RK).map(r => {
+    const L = D.companies, rkOf = (c, k) => k === 'V2' ? (c.$.v2 ? c.$.v2.rank : null) : c.$.rank[k];
+    const inNow = L.filter(c => rkOf(c, r) != null && rkOf(c, r) <= S.len);
     const wasIn = L.filter(c => BASE[c.id][r] != null && BASE[c.id][r] <= D.settings.length);
-    const enter = inNow.filter(c => !wasIn.includes(c)).sort((a, b) => a.$.rank[r] - b.$.rank[r]);
+    const enter = inNow.filter(c => !wasIn.includes(c)).sort((a, b) => rkOf(a, r) - rkOf(b, r));
     const leave = wasIn.filter(c => !inNow.includes(c)).sort((a, b) => BASE[a.id][r] - BASE[b.id][r]);
     const item = (c, txt) => `<li><a href="#" data-act="open" data-id="${esc(c.id)}">${esc(c.name)}</a> <span class="muted small">${txt}</span></li>`;
-    return `<section class="card"><h3>${r.slice(1)} · ${esc(D.rubrics[r].name)}</h3>
-      <p class="small" style="margin:8px 0 0"><b class="delta up">Enter (${enter.length})</b></p><ul>${enter.map(c => item(c, `now #${c.$.rank[r]}, sheet ${BASE[c.id][r] ? '#' + BASE[c.id][r] : 'unranked'}`)).join('') || '<li class="muted">None</li>'}</ul>
-      <p class="small" style="margin:10px 0 0"><b class="delta down">Leave (${leave.length})</b></p><ul>${leave.map(c => item(c, `sheet #${BASE[c.id][r]}, now ${c.$.rank[r] ? '#' + c.$.rank[r] : 'unranked'}`)).join('') || '<li class="muted">None</li>'}</ul></section>`;
+    return `<section class="card"><h3>${r === 'V2' ? '4 · MindCET v2' : r.slice(1) + ' · ' + esc(D.rubrics[r].name)}</h3>
+      <p class="small" style="margin:8px 0 0"><b class="delta up">Enter (${enter.length})</b></p><ul>${enter.map(c => item(c, `now #${rkOf(c, r)}, sheet ${BASE[c.id][r] ? '#' + BASE[c.id][r] : 'unranked'}`)).join('') || '<li class="muted">None</li>'}</ul>
+      <p class="small" style="margin:10px 0 0"><b class="delta down">Leave (${leave.length})</b></p><ul>${leave.map(c => item(c, `sheet #${BASE[c.id][r]}, now ${rkOf(c, r) ? '#' + rkOf(c, r) : 'unranked'}`)).join('') || '<li class="muted">None</li>'}</ul></section>`;
   }).join('');
 }
 document.addEventListener('click', e => { const a = e.target.closest('a[data-act="open"]'); if (a) e.preventDefault(); });

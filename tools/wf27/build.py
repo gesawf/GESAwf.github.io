@@ -69,8 +69,7 @@ CRITERIA = [  # (key, sheet column header, short label)
     ("employer", "Employer readiness", "Employer"),
 ]
 
-# Sponsor highlight rule: on all three shortlists AND independently confirmed.
-SPONSOR_LISTS_REQUIRED = 3
+# Sponsor highlight rule: on all four shortlists (three if no MindCET v2 sheet) AND independently confirmed.
 SPONSOR_WEB_CHECKS = {"Confirmed"}
 
 
@@ -197,8 +196,9 @@ def read_workbook(path):
     # --- Scores
     ws = wb["Scores"]
     hdr, srows = table(ws, 2)
+    LK = "Lists (of 4)" if "Lists (of 4)" in hdr else "Lists (of 3)"
     need(hdr, ["ID", "Company", "Country", "Region", "Late entry", "Ranked?", "R1 rank", "R2 rank", "R3 rank",
-               "Lists (of 3)", "Revenue (USD, reported)", "Funding stage", "Product stage", "Business model",
+               LK, "Revenue (USD, reported)", "Funding stage", "Product stage", "Business model",
                "Website", "Reviewer note", "Web check", "Web check note", "Check source", "Data issues",
                "Israeli semifinal candidate"] + [c[1] for c in CRITERIA], "Scores")
     scored = []
@@ -217,7 +217,7 @@ def read_workbook(path):
             "conc": txt(d.get("Internal concerns (reviewer)")), "claim": txt(d.get("Claim to verify")),
             "conf": txt(d.get("Reviewer confidence")),
             "_sheet": {"ranked": yes(d["Ranked?"]), "R1": d["R1 rank"], "R2": d["R2 rank"], "R3": d["R3 rank"],
-                       "lists": int(num(d["Lists (of 3)"]) or 0)},
+                       "lists": int(num(d[LK]) or 0)},
         })
 
     # --- Clean pipeline
@@ -326,7 +326,7 @@ def read_workbook(path):
                                 "why": txt(d.get("Reviewer reasoning (internal)")), "_rank": d.get("Rank")}
         v2 = {"criteria": crit2, "w": [num(x) or 0.0 for x in g2[iw][2:8]], "scores": srows,
               "intro": "A fourth rubric from MindCET: six criteria (pain point, pedagogy, user experience, evidence of change, "
-                       "product viability, growth potential), equal weight, scored separately from the ten criteria behind the three shortlists.",
+                       "product viability, growth potential), equal weight, scored separately from the ten criteria behind the first three shortlists.",
               "note": txt(g2[1][0])}
 
     return {"v2": v2, "rescore": rescore, "rescoreTitle": rescore_title, "apps": apps,
@@ -343,7 +343,7 @@ def rubric_scores(s, rubrics):
     return {"lens": lens, "R1": sum(lens), "R2": dot(rubrics["R2"]["rows"][0]["w"]), "R3": dot(rubrics["R3"]["rows"][0]["w"])}
 
 
-def compute(scored, rubrics, gate, length):
+def compute(scored, rubrics, gate, length, v2=None):
     """Exactly the sheet's logic: key = score + change/100 + traction/1000 + (1000-row)/1e7,
     rank = 1 + count of ranked keys strictly greater."""
     ix = {c["key"]: i for i, c in enumerate(CRITERIA_KEYS)}
@@ -359,8 +359,17 @@ def compute(scored, rubrics, gate, length):
         keys = [v["key"][r] for v in res.values() if v["ranked"]]
         for v in res.values():
             v[r] = (1 + sum(1 for k in keys if k > v["key"][r])) if v["ranked"] else None
+    keyv = {}
+    if v2:  # MindCET v2: same gate, ties on Evidence of change then Product viability then sheet row
+        for c in scored:
+            d = v2["scores"].get(c["id"])
+            if d and res[c["id"]]["ranked"]:
+                keyv[c["id"]] = (sum(w * x for w, x in zip(v2["w"], d["v"])) / 4 + d["v"][3] / 100
+                                 + d["v"][4] / 1000 + (1000 - c["row"]) / 1e7)
+    for cid, v in res.items():
+        v["V2"] = (1 + sum(1 for k in keyv.values() if k > keyv[cid])) if cid in keyv else None
     for v in res.values():
-        v["lists"] = sum(1 for r in ("R1", "R2", "R3") if v[r] is not None and v[r] <= length)
+        v["lists"] = sum(1 for r in ("R1", "R2", "R3", "V2") if v.get(r) is not None and v[r] <= length)
     return res
 
 
@@ -368,7 +377,7 @@ CRITERIA_KEYS = [{"key": k} for k, _, _ in CRITERIA]
 
 
 def self_check(wbdata):
-    res = compute(wbdata["scored"], wbdata["rubrics"], wbdata["settings"]["gate"], wbdata["settings"]["length"])
+    res = compute(wbdata["scored"], wbdata["rubrics"], wbdata["settings"]["gate"], wbdata["settings"]["length"], wbdata.get("v2"))
     bad = []
     for c in wbdata["scored"]:
         v, sh = res[c["id"]], c["_sheet"]
@@ -380,15 +389,9 @@ def self_check(wbdata):
         if v["lists"] != sh["lists"]:
             bad.append(f'{c["id"]} lists {v["lists"]} vs sheet {sh["lists"]}')
     v2 = wbdata.get("v2")
-    if v2:  # MindCET v2: same gate, ties on Evidence of change then Product viability then sheet row
-        rows = {c["id"]: c["row"] for c in wbdata["scored"]}
-        keyv = {}
+    if v2:
         for cid, d in v2["scores"].items():
-            if cid in res and res[cid]["ranked"]:
-                sc2 = sum(w * x for w, x in zip(v2["w"], d["v"])) / 4
-                keyv[cid] = sc2 + d["v"][3] / 100 + d["v"][4] / 1000 + (1000 - rows[cid]) / 1e7
-        for cid, d in v2["scores"].items():
-            mine = (1 + sum(1 for k in keyv.values() if k > keyv[cid])) if cid in keyv else None
+            mine = res[cid]["V2"] if cid in res else None
             sheet = int(d["_rank"]) if d["_rank"] not in (None, "") else None
             if mine != sheet:
                 bad.append(f"{cid} MindCET v2 rank {mine} vs sheet {sheet}")
@@ -586,16 +589,17 @@ def build_payloads(w, res):
     emp_i, inv_i = lens_names.index("Employer / sponsor lens"), lens_names.index("Investor lens")
     emp_max = sum(w["rubrics"]["R1"]["rows"][emp_i]["w"])
     inv_max = sum(w["rubrics"]["R1"]["rows"][inv_i]["w"])
+    NLISTS = 4 if w.get("v2") else 3
     highlights = []
     for c in S:
         v = res[c["id"]]
-        if v["lists"] >= SPONSOR_LISTS_REQUIRED and c["wc"] in SPONSOR_WEB_CHECKS:
+        if v["lists"] >= NLISTS and c["wc"] in SPONSOR_WEB_CHECKS:
             highlights.append({"name": c["name"], "country": c["country"], "region": c["region"], "stage": c["stage"],
                                "website": c["website"], "note": c["note"], "wc": c["wc"],
                                "employer": round(v["sc"]["lens"][emp_i], 2), "investor": round(v["sc"]["lens"][inv_i], 2),
                                "_order": v["R1"]})
     highlights.sort(key=lambda h: h.pop("_order"))
-    all3 = sum(1 for c in S if res[c["id"]]["lists"] == 3)
+    all3 = sum(1 for c in S if res[c["id"]]["lists"] == NLISTS)
     payloads["sponsors"] = {
         "meta": {**common_meta, "audience": "sponsors", "label": AUDIENCES["sponsors"]},
         "features": {"reweight": False, "shortlists": False, "explorer": False, "pipeline": False, "quality": False,
@@ -609,7 +613,7 @@ def build_payloads(w, res):
             {"label": "Countries", "value": str(len(set(p["country"] for p in P)))},
             {"label": "Workforce / lifelong-learning applicants", "value": str(sum(1 for p in P if p["track"]))},
             {"label": "Pass the workforce-fit bar", "value": str(len(ranked))},
-            {"label": "On all three shortlists", "value": str(all3)},
+            {"label": "On all four shortlists" if NLISTS == 4 else "On all three shortlists", "value": str(all3)},
         ],
         "charts": pipeline_charts(P, False),
         "highlights": highlights,
