@@ -176,12 +176,21 @@
   @media (max-width: 1300px) { .sl3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 700px) { .sl3 { grid-template-columns: 1fr; } }
   .rulebox { padding: 14px 18px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); background: color-mix(in srgb, var(--accent) 10%, transparent); margin-bottom: 20px; font-size: 15px; }
-  .prizes { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
-  @media (max-width: 800px) { .prizes { grid-template-columns: 1fr; } }
+  .prizes, .pdesc { grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; gap: 14px; }
+  @media (max-width: 1100px) { .prizes, .pdesc { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 700px) { .prizes, .pdesc { grid-template-columns: 1fr; } }
+  .pdesc { margin: 0 0 22px; align-items: stretch; }
+  .pdesc > div { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; font-size: 14px; }
+  .pdesc b { display: block; margin-bottom: 4px; }
+  .prizeh { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
+  .prize { padding: 14px 12px; min-width: 0; }
+  .prize h3 { font-size: 16px; }
+  .prize .slist li { grid-template-columns: 20px minmax(0, 1fr) auto; gap: 6px; padding: 6px 4px; }
+  .prize .sub { flex-wrap: nowrap; overflow: hidden; }
+  .prize .sub .co { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
   .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   @media (max-width: 600px) { .grid.two { grid-template-columns: 1fr; } }
   .prize .sub .chip { font-size: 10.5px; padding: 3px 6px; }
-  .prize .slist .nm { white-space: normal; }
   table.rubric-v2 td.wt { white-space: nowrap; min-width: 110px; }
   table.rubric-v2 td.crit { min-width: 220px; }
   table.rubric-v2 td.crit b, table.rubric-v2 td.crit .small { display: block; }
@@ -533,7 +542,7 @@ function customFlag() {
   if (S.gate !== D.settings.gate) bits.push(`fit gate ≥ ${S.gate}`);
   if (S.len !== D.settings.length) bits.push(`top ${S.len}`);
   if (S.lateMode === 'exclude') bits.push('late entries excluded');
-  if (RK.some(r => JSON.stringify(S.w[r]) !== JSON.stringify(defaultWeights()[r]))) bits.push('custom weights');
+  if (!ORG() && RK.some(r => JSON.stringify(S.w[r]) !== JSON.stringify(defaultWeights()[r]))) bits.push('custom weights');
   if (v2Custom()) bits.push('custom MindCET v2 weights');
   return `<div class="custom-flag"><span class="chip accent"><i></i>What-if</span><span>Showing your settings (${esc(bits.join(', '))}), not the sheet's.</span>
     <span class="spacer"></span><button class="btn sm" data-act="reset">Reset to sheet</button>${S.tab !== 'lab' && S.tab !== 'rubric' ? `<button class="btn sm" data-act="golab">${ORG() ? 'Open rubric' : 'Open rubric lab'}</button>` : ''}</div>`;
@@ -657,7 +666,7 @@ function orgOverview(el, intro) {
     { l: 'Track-relevant (Workforce / Lifelong Learning)', n: kc('Track-relevant') },
     { l: 'Scored', n: kc('Scored'), note: 'includes companies screened in despite their tags' },
     { l: 'Ranked (pass the Workforce-fit gate)', n: kc('Ranked'), liveN: S.nRanked },
-    { l: 'Shortlisted', n: on1, sub: 'on at least one of the four shortlists', liveN: on1 },
+    { l: 'Shortlisted', n: on1, sub: 'companies on the shortlist', liveN: on1 },
   ];
   const max = steps[0].n || 1;
   const html = steps.map(s => {
@@ -915,10 +924,10 @@ function orgShortlist(el) {
     if (x != null) return -1; if (y != null) return 1;
     return b.$.lists - a.$.lists || (avg(b) - avg(a)) || a.row - b.row;
   });
-  el.innerHTML = `<div class="pagehead"><div><h2>Shortlist</h2><p class="muted">${rows.length} companies reach the top ${S.len} on at least one of the four rubrics, ordered by their MindCET v2 rank.</p></div></div>${customFlag()}
-  <div class="tablewrap"><table><thead><tr><th class="r">#</th><th>Company</th><th>Country</th><th class="r">MindCET v2</th><th class="c">Lists</th><th>Web check</th><th>Why it stands out</th></tr></thead><tbody>
+  el.innerHTML = `<div class="pagehead"><div><h2>Shortlist</h2><p class="muted">${rows.length} companies on the MindCET v2 shortlist (top ${S.len}) or the track shortlists, ordered by their MindCET v2 rank.</p></div></div>${customFlag()}
+  <div class="tablewrap"><table><thead><tr><th class="r">#</th><th>Company</th><th>Country</th><th class="r">MindCET v2</th><th>Web check</th><th>Why it stands out</th></tr></thead><tbody>
   ${rows.map(c => `<tr class="click" tabindex="0" data-act="open" data-id="${esc(c.id)}"><td class="r muted">${v2Rank(c) ?? '–'}</td><td class="name">${esc(c.name)} ${lateChip(c)}</td><td>${esc(c.country)}</td>
-    <td class="r num">${c.$.v2 ? fmt(c.$.v2.sc, 1) : '<span class="muted">–</span>'}</td><td class="c">${dots(c.$.lists)}</td><td>${wcChip(c.wc)}</td><td class="wrap muted">${esc(c.note)}</td></tr>`).join('')}</tbody></table></div>`;
+    <td class="r num">${c.$.v2 ? fmt(c.$.v2.sc, 1) : '<span class="muted">–</span>'}</td><td>${wcChip(c.wc)}</td><td class="wrap muted">${esc(c.note)}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
 function orgExplorer(el) {
@@ -942,9 +951,9 @@ function drawOrgExplorer() {
   $('#ex-count').textContent = `${rows.length} of ${D.companies.filter(c => c.v).length}`;
   const th = (k, label, cls = '', title = '') => `<th class="sortable ${cls} ${key === k ? 'sorted' : ''}" data-sort="${k}" title="${esc(title || 'Sort')}">${label}${key === k ? (dir > 0 ? ' ↓' : ' ↑') : ''}</th>`;
   $('#ex-table').innerHTML = `<table><thead><tr>${th('V2', 'v2 #', 'r', 'Rank on MindCET v2')}${th('name', 'Company')}${th('country', 'Country')}
-    ${order.map(j => th('v:' + j, esc(D.v2.criteria[j].short), 'c', D.v2.criteria[j].label + ' (0–4)')).join('')}${th('sc', 'v2 score', 'r', 'MindCET v2 score')}${th('lists', 'Lists', 'c')}<th>Flags</th></tr></thead>
+    ${order.map(j => th('v:' + j, esc(D.v2.criteria[j].short), 'c', D.v2.criteria[j].label + ' (0–4)')).join('')}${th('sc', 'v2 score', 'r', 'MindCET v2 score')}<th>Flags</th></tr></thead>
     <tbody>${rows.map(c => `<tr class="click" tabindex="0" data-act="open" data-id="${esc(c.id)}"><td class="r">${v2Rank(c) ?? '<span class="muted">–</span>'}</td><td class="name">${esc(c.name)}</td><td>${esc(c.country)}</td>
-      ${order.map(j => `<td class="c">${heat(c.v[j])}</td>`).join('')}<td class="r num">${fmt(c.$.v2.sc, 1)}</td><td class="c">${dots(c.$.lists)}</td><td>${wcChip(c.wc)} ${lateChip(c)}</td></tr>`).join('')}</tbody></table>`;
+      ${order.map(j => `<td class="c">${heat(c.v[j])}</td>`).join('')}<td class="r num">${fmt(c.$.v2.sc, 1)}</td><td>${wcChip(c.wc)} ${lateChip(c)}</td></tr>`).join('')}</tbody></table>`;
   $$('#ex-table th[data-sort]').forEach(h => h.addEventListener('click', () => {
     const k = h.dataset.sort; if (S.ex2.sort === k) S.ex2.dir *= -1; else { S.ex2.sort = k; S.ex2.dir = 1; } drawOrgExplorer();
   }));
@@ -962,15 +971,24 @@ VIEWS.prizes = el => {
     { id: 'ev', short: 'Evidence', title: 'Evidence award', what: 'The strongest proof that the product changes outcomes for learners or workers.', pool: pool.slice(), sort: (a, b) => b.v[iEv] - a.v[iEv] || b.s[iCh] - a.s[iCh] || byV2(a, b) },
   ];
   P.forEach(p => { p.all = p.pool.slice().sort(p.sort); p.top = p.all.slice(0, 15); p.ids = new Set(p.top.map(c => c.id)); });
-  const card = p => `<section class="card prize"><h3>${esc(p.title)}</h3><p class="small muted" style="margin:4px 0 10px"><b>What it rewards:</b> ${esc(p.what)}</p>
+  const desc = {
+    path: 'Getting people from education or unemployment into a first role (training, employability, job matching).',
+    up: 'Learning built into the job for people already employed, including workforce infrastructure (skills mapping, credentials, assessment).',
+    em: 'The best workforce product built in and for an emerging market (Africa, Asia, Latin America and other non-high-income countries).',
+    ev: 'The clearest proof that work actually changed after using the product, in any segment.',
+  };
+  const card = p => `<section class="card prize"><h3>${esc(p.title)}</h3>
     <ol class="slist">${p.top.map((c, i) => {
       const others = P.filter(o => o !== p && o.ids.has(c.id));
-      return `<li tabindex="0" data-act="open" data-id="${esc(c.id)}"><span class="rk">${i + 1}</span><div style="min-width:0"><div class="nm">${esc(c.name)}${p.id === 'ev' ? ` <span class="chip accent">Evidence ${c.v[iEv]}/4</span>` : ''}</div>
-      <div class="sub">${esc(c.country)}${others.length ? ' · also in: ' + others.map(o => `<span class="chip">${esc(o.short)}</span>`).join(' ') : ''}</div></div>
+      const tt = `${c.name} (${c.country})`;
+      return `<li tabindex="0" data-act="open" data-id="${esc(c.id)}"><span class="rk">${i + 1}</span><div style="min-width:0"><div class="nm" title="${esc(tt)}">${esc(c.name)}</div>
+      <div class="sub"><span class="co" title="${esc(c.country)}">${esc(c.country)}</span>${p.id === 'ev' ? ` <span class="chip accent">Ev ${c.v[iEv]}/4</span>` : ''}${others.length ? others.map(o => `<span class="chip" title="Also a contender in: ${esc(o.title)}">${esc(o.short)}</span>`).join('') : ''}</div></div>
       <div class="sc"><div class="num">${fmt(c.$.v2.sc, 1)}</div></div></li>`; }).join('') || '<li class="muted">No eligible companies</li>'}</ol>
     <p class="small muted" style="margin:10px 0 0">${p.all.length} eligible</p></section>`;
-  el.innerHTML = `<div class="pagehead"><div><h2>Prizes</h2><p class="muted">Four prizes: Pathways into work, Upskilling at work (including workforce infrastructure), Emerging-market solution, and Evidence award.</p></div></div>${customFlag()}
+  el.innerHTML = `<div class="pagehead"><div><h2>Prizes</h2><p class="muted">Four prizes, ranked on MindCET v2: Pathways into work, Upskilling at work, Emerging-market solution, and Evidence award.</p></div></div>${customFlag()}
   <div class="rulebox"><b>One prize per company:</b> a company can be a contender in several categories but can win only one.</div>
+  <h3 class="prizeh">The four prizes</h3>
+  <div class="grid pdesc">${P.map(p => `<div><b>${esc(p.title)}</b>${esc(desc[p.id])}</div>`).join('')}</div>
   <div class="grid prizes">${P.map(card).join('')}</div>`;
 };
 
@@ -1125,10 +1143,22 @@ function openCompany(id) {
     <div class="meta-line">${esc(x.country)} · ${esc(x.region)}${x.stage ? ' · ' + esc(x.stage) : ''} ${c ? wcChip(c.wc) : ''} ${lateChip(x)} ${ilChip(x)}</div>`;
   if (x.website) h += `<p class="small" style="margin:10px 0 0">${site(x.website)}</p>`;
   if (c) {
+    const v2html = () => {
+    if (D.v2 && c.v && c.$.v2) { const r2 = c.$.v2;
+      return `<div class="sec"><h3>MindCET v2</h3><div class="rub"><span>Six criteria</span><span class="num"><b>${fmt(r2.sc, 1)}</b><span class="muted small">/${fmt(v2max(), 0)}</span></span>
+        <span class="small num">${r2.rank ? `#${r2.rank} of ${S.nV2} ${r2.rank <= S.len ? '<span class="chip accent">top ' + S.len + '</span>' : ''}` : '<span class="muted">not ranked</span>'}</span></div>
+        ${D.v2.criteria.map((k, i) => { const v = c.v[i]; return `<div class="crit"><span class="n" title="${esc(k.desc)}">${esc(k.label)}</span>
+        <span class="pips" aria-label="${v} of 4">${[1, 2, 3, 4].map(n => `<i class="${n <= v ? 'on' : ''}"></i>`).join('')}<b>${fmt(v, 0)}</b></span><span class="a">${esc(k.levels[Math.max(0, v - 1)] || '')}</span></div>`; }).join('')}
+        ${c.vux && c.vux !== 'described' ? `<p class="small muted">User experience is judged from the application text only, and here the text ${c.vux === 'none' ? 'says nothing about' : 'gives only hints of'} how the product is used. The product video was not watched.</p>` : ''}
+        ${F.internal && c.vwhy ? `<p class="small" style="margin:8px 0 0"><b>Reviewer reasoning:</b> ${esc(c.vwhy)}</p>` : ''}</div>`; }
+    return '';
+    };
     if (c.note) h += `<div class="sec"><h3>Why it stands out</h3><blockquote>${esc(c.note)}</blockquote></div>`;
+    if (ORG()) h += (D.v2 && c.v && c.$.v2) ? v2html() : '<p class="small muted" style="margin:16px 0">Not scored on MindCET v2 (below the Workforce-fit bar).</p>';
     if (F.internal && (c.conc || c.claim)) h += `<div class="sec"><h3>Internal review <span class="chip">core &amp; organisers only</span></h3>
       ${c.claim ? `<p style="margin:0 0 8px"><b>Claim to verify:</b> ${esc(c.claim)}</p>` : ''}${c.conc ? `<p style="margin:0 0 8px"><b>Reviewer concerns:</b> ${esc(c.conc)}</p>` : ''}
       ${c.conf ? `<p class="small muted" style="margin:0">Reviewer confidence: ${esc(c.conf)}</p>` : ''}</div>`;
+    if (!ORG()) {
     h += `<div class="sec"><h3>Rubric results</h3>`;
     RK.forEach(r => {
       const rk = c.$.rank[r];
@@ -1143,13 +1173,8 @@ function openCompany(id) {
     h += `<div class="sec"><h3>Criterion scores</h3>${C.map((cr, i) => { const v = c.s[i]; return `<div class="crit"><span class="n" title="${esc(cr.measures)}">${esc(cr.label)}</span>
       <span class="pips" aria-label="${v} of 4">${[1, 2, 3, 4].map(k => `<i class="${k <= v ? 'on' : ''}"></i>`).join('')}<b>${fmt(v, 0)}</b>${c.prev && c.prev[i] !== v ? `<span class="was" title="Score on 3 Nov">was ${c.prev[i]}</span>` : ''}</span><span class="a">${esc(cr.levels[v] || '')}</span></div>`; }).join('')}
       <p class="small muted">Scores are a reviewer's judgement of self-reported answers, not facts.</p></div>`;
-    if (D.v2 && c.v && c.$.v2) { const r2 = c.$.v2;
-      h += `<div class="sec"><h3>MindCET v2</h3><div class="rub"><span>Six criteria</span><span class="num"><b>${fmt(r2.sc, 1)}</b><span class="muted small">/${fmt(v2max(), 0)}</span></span>
-        <span class="small num">${r2.rank ? `#${r2.rank} of ${S.nV2} ${r2.rank <= S.len ? '<span class="chip accent">top ' + S.len + '</span>' : ''}` : '<span class="muted">not ranked</span>'}</span></div>
-        ${D.v2.criteria.map((k, i) => { const v = c.v[i]; return `<div class="crit"><span class="n" title="${esc(k.desc)}">${esc(k.label)}</span>
-        <span class="pips" aria-label="${v} of 4">${[1, 2, 3, 4].map(n => `<i class="${n <= v ? 'on' : ''}"></i>`).join('')}<b>${fmt(v, 0)}</b></span><span class="a">${esc(k.levels[Math.max(0, v - 1)] || '')}</span></div>`; }).join('')}
-        ${c.vux && c.vux !== 'described' ? `<p class="small muted">User experience is judged from the application text only, and here the text ${c.vux === 'none' ? 'says nothing about' : 'gives only hints of'} how the product is used. The product video was not watched.</p>` : ''}
-        ${F.internal && c.vwhy ? `<p class="small" style="margin:8px 0 0"><b>Reviewer reasoning:</b> ${esc(c.vwhy)}</p>` : ''}</div>`; }
+    h += v2html();
+    }
     if (c.wc && !c.wc.startsWith('Not checked')) h += `<div class="sec"><h3>Web check</h3><p style="margin:0 0 8px">${wcChip(c.wc)}</p>${c.wcNote ? `<p style="margin:0 0 6px">${esc(c.wcNote)}</p>` : ''}${c.wcSrc ? `<p class="small" style="margin:0">Source: ${safeLink(c.wcSrc)}</p>` : ''}</div>`;
   } else {
     h += `<div class="sec"><p class="muted">Not scored for the track${p && !p.track ? ' (not a workforce or lifelong-learning applicant)' : ''}.</p></div>`;
