@@ -429,8 +429,10 @@ function start(data) {
   const want = (location.hash || '').slice(1);
   show(resolveTab(want) || TABS[0].id);
   const toLab = () => setTimeout(() => { const n = $('#rubric-lab'); if (n) n.scrollIntoView(); }, 50);
+  const toDq = () => setTimeout(() => { const n = $('#org-dq'); if (n) n.scrollIntoView(); }, 50);
   if (ORG() && want === 'lab') toLab();
-  window.addEventListener('hashchange', () => { const raw = location.hash.slice(1), h = resolveTab(raw); if (h && (h !== S.tab || (ORG() && raw === 'lab'))) show(h); if (ORG() && raw === 'lab') toLab(); });
+  if (ORG() && want === 'quality') toDq();
+  window.addEventListener('hashchange', () => { const raw = location.hash.slice(1), h = resolveTab(raw); if (h && (h !== S.tab || (ORG() && (raw === 'lab' || raw === 'quality')))) show(h); if (ORG() && raw === 'lab') toLab(); if (ORG() && raw === 'quality') toDq(); });
   initTip();
 }
 
@@ -508,7 +510,7 @@ const maxScore = r => S.w[r].reduce((a, row) => a + row.reduce((x, y) => x + y, 
 /* ---------- tabs */
 let TABS = [];
 const ORG = () => F.layout === 'organisers';
-const TAB_ALIAS = { lab: 'rubric', method: 'rubric', shortlists: 'auto', pipeline: 'overview' };
+const TAB_ALIAS = { lab: 'rubric', method: 'rubric', shortlists: 'auto', pipeline: 'overview', quality: 'overview' };
 function resolveTab(h) {
   if (TABS.some(t => t.id === h)) return h;
   if (ORG() && TAB_ALIAS[h]) return TAB_ALIAS[h];
@@ -517,7 +519,7 @@ function resolveTab(h) {
 function buildTabs() {
   if (ORG()) {
     TABS = [{ id: 'overview', label: 'Overview' }, { id: 'rubric', label: 'Rubric' }, { id: 'auto', label: 'Shortlist' },
-      { id: 'explorer', label: 'All scores' }, { id: 'prizes', label: 'Prizes' }, { id: 'quality', label: 'Data quality' }];
+      { id: 'explorer', label: 'All scores' }, { id: 'prizes', label: 'Prizes' }];
     $('#tabs').innerHTML = TABS.map(t => `<button role="tab" data-tab="${t.id}" aria-selected="false">${esc(t.label)}</button>`).join('');
     $('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) show(b.dataset.tab); });
     return;
@@ -685,7 +687,8 @@ function orgOverview(el, intro) {
       ${s.sub ? `<div class="fnote">${esc(s.sub)}</div>` : ''}${s.note ? `<div class="fnote">${esc(s.note)}</div>` : ''}</div>`;
   }).join('');
   el.innerHTML = `<div class="pagehead"><div><h2>Overview</h2><p class="muted">${esc(intro)}</p></div></div>${customFlag()}
-    <section class="card funnel">${html}</section><div class="grid charts" style="margin-top:24px">${(D.charts || []).map(ch => chartCard(ch)).join('')}</div>`;
+    <section class="card funnel">${html}</section><div class="grid charts" style="margin-top:24px">${(D.charts || []).filter(ch => ch.id !== 'issues').map(ch => chartCard(ch)).join('')}</div>
+    <section id="org-dq" style="margin-top:40px">${orgQualityHtml()}</section>`;
 }
 
 /* ---------- Highlights (sponsors) */
@@ -1131,12 +1134,12 @@ function downloadCsv() {
 }
 
 /* ---------- Data quality */
-function orgQuality(el) {
+function orgQualityHtml() {
   const issues = (D.charts || []).find(c => c.id === 'issues');
   const dupSec = (D.changes || []).find(s => /^Duplicates merged/.test(s.title));
   const dup = (D.pipeline || []).filter(p => p.merged > 1).length;
   const hd = r => /^Company$/.test(r[0]);
-  el.innerHTML = `<div class="pagehead"><div><h2>Data quality</h2><p class="muted">Which records need attention, and which duplicate submissions were merged.</p></div></div>
+  return `<div class="pagehead"><div><h2>Data quality</h2><p class="muted">Which records need attention, and which duplicate submissions were merged.</p></div></div>
   <div class="grid kpis">
     <div class="kpi"><div class="v num">${(D.pipeline || []).filter(p => p.issues).length}</div><div class="l">Companies with at least one flag</div></div>
     <div class="kpi"><div class="v num">${dup}</div><div class="l">Companies with merged duplicate submissions</div></div>
@@ -1149,7 +1152,6 @@ function orgQuality(el) {
   </div>`;
 }
 VIEWS.quality = el => {
-  if (ORG()) return orgQuality(el);
   const issues = (D.charts || []).find(c => c.id === 'issues');
   const dup = (D.pipeline || []).filter(p => p.merged > 1).length;
   el.innerHTML = `<div class="pagehead"><div><h2>Data quality</h2><p class="muted">What changed when the screen moved from the Google Sheet export to the Airtable source, and which records need attention before anything goes public.</p></div></div>
