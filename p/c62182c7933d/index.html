@@ -96,6 +96,15 @@
   .kpi .v { font-family: Fraunces, Georgia, serif; font-size: 30px; line-height: 1.1; }
   .kpi .l { font-size: 13px; color: var(--muted); margin-top: 4px; }
   .kpi.live .v { color: var(--accent); }
+  .funnel { display: grid; gap: 16px; }
+  .fstep { min-width: 0; }
+  .fhead { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .fv { font-family: Fraunces, Georgia, serif; font-size: 30px; line-height: 1.1; min-width: 2.2em; }
+  .fl { font-size: 14px; color: var(--body); min-width: 0; }
+  .fstep.live .fv { color: var(--accent); }
+  .ftrack { height: 14px; background: color-mix(in srgb, var(--body) 8%, transparent); border-radius: 4px; margin-top: 6px; overflow: hidden; }
+  .ffill { height: 100%; background: var(--accent); border-radius: 4px; }
+  .fnote { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
   .charts { grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); }
   .card { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); padding: 18px; min-width: 0; }
   .card.wide { grid-column: 1 / -1; }
@@ -391,8 +400,8 @@ function start(data) {
   }
   buildTabs();
   const want = (location.hash || '').slice(1);
-  show(TABS.some(t => t.id === want) ? want : TABS[0].id);
-  window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (h && h !== S.tab && TABS.some(t => t.id === h)) show(h); });
+  show(resolveTab(want) || TABS[0].id);
+  window.addEventListener('hashchange', () => { const h = resolveTab(location.hash.slice(1)); if (h && h !== S.tab) show(h); });
   initTip();
 }
 
@@ -406,7 +415,7 @@ function defaults() {
   return { w: D.companies ? defaultWeights() : {}, gate: st.gate ?? 3, len: st.length ?? 30, lateMode: 'include', tab: null,
     ex: { q: '', region: '', wc: '', lists: '', late: '', ranked: 'ranked', il: '', sort: 'R1', dir: 1 },
     pl: { q: '', region: '', track: '', scored: '', late: '', stage: '', issue: '', il: '', sort: 'name', dir: 1 },
-    slView: 'side', v2w: D.v2 ? D.v2.w.slice() : null };
+    slView: 'side', asView: 'overlap', v2w: D.v2 ? D.v2.w.slice() : null };
 }
 function clampState() {
   const dw = defaultWeights();
@@ -469,7 +478,21 @@ const maxScore = r => S.w[r].reduce((a, row) => a + row.reduce((x, y) => x + y, 
 
 /* ---------- tabs */
 let TABS = [];
+const ORG = () => F.layout === 'organisers';
+const TAB_ALIAS = { lab: 'rubric', method: 'rubric', shortlists: 'auto', pipeline: 'overview' };
+function resolveTab(h) {
+  if (TABS.some(t => t.id === h)) return h;
+  if (ORG() && TAB_ALIAS[h]) return TAB_ALIAS[h];
+  return null;
+}
 function buildTabs() {
+  if (ORG()) {
+    TABS = [{ id: 'overview', label: 'Overview' }, { id: 'rubric', label: 'Rubric' }, { id: 'auto', label: 'Automated shortlist' },
+      { id: 'explorer', label: 'All scores' }, { id: 'quality', label: 'Data quality' }];
+    $('#tabs').innerHTML = TABS.map(t => `<button role="tab" data-tab="${t.id}" aria-selected="false">${esc(t.label)}</button>`).join('');
+    $('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) show(b.dataset.tab); });
+    return;
+  }
   TABS = [{ id: 'overview', label: 'Overview' }];
   if (F.highlights) TABS.push({ id: 'highlights', label: 'Highlighted companies' });
   if (F.shortlists) TABS.push({ id: 'shortlists', label: 'Shortlists & overlap' });
@@ -505,7 +528,7 @@ function customFlag() {
 document.addEventListener('click', e => {
   const a = e.target.closest('[data-act]');
   if (!a) return;
-  if (a.dataset.act === 'reset') { const t = S.tab; const keep = { ex: S.ex, pl: S.pl, slView: S.slView }; S = { ...defaults(), ...keep, tab: t }; compute(S); persist(); render(); }
+  if (a.dataset.act === 'reset') { const t = S.tab; const keep = { ex: S.ex, pl: S.pl, slView: S.slView, asView: S.asView }; S = { ...defaults(), ...keep, tab: t }; compute(S); persist(); render(); }
   if (a.dataset.act === 'golab') show('lab');
   if (a.dataset.act === 'open') openCompany(a.dataset.id);
   if (a.dataset.act === 'toggle-table') { const card = a.closest('.card'); card.classList.toggle('as-table'); $('.chart-body', card).classList.toggle('hidden'); $('.chart-table', card).classList.toggle('hidden'); a.textContent = card.classList.contains('as-table') ? 'Show chart' : 'Show table'; }
@@ -594,10 +617,11 @@ function initTip() {
 VIEWS.overview = el => {
   const intro = {
     core: 'Everything in the applicant screen: pipeline, scores, shortlists and data quality.',
-    organisers: 'The applicant screen for programme owners: pipeline, scores, shortlists and data quality.',
+    organisers: 'From applications received to the automated shortlist: how many companies remain at each step.',
     jury: `The ${D.companies ? D.companies.length : ''} companies that passed the Workforce-fit gate, with the reviewer's pre-scores. Use the rubric lab to test your own weights.`,
     sponsors: 'Who applied to the Workforce Learning Track, and the companies that stand out on every rubric.',
   }[D.meta.audience] || '';
+  if (ORG()) return orgOverview(el, intro);
   let kpis = (D.keyCounts || []).filter(k => !(F.reweight && /^Companies on/.test(k.label)));
   let html = `<div class="pagehead"><div><h2>Overview</h2><p class="muted">${esc(intro)}</p></div></div>${customFlag()}<div class="grid kpis">`;
   html += kpis.map(k => `<div class="kpi"><div class="v num">${esc(String(k.value).replace(/\.0$/, ''))}</div><div class="l">${esc(k.label)}</div></div>`).join('');
@@ -610,6 +634,29 @@ VIEWS.overview = el => {
   html += `</div><div class="grid charts">${(D.charts || []).map(ch => chartCard(ch)).join('')}</div>`;
   el.innerHTML = html;
 };
+
+function orgOverview(el, intro) {
+  const kc = lbl => { const k = (D.keyCounts || []).find(k => k.label.startsWith(lbl)); return k ? Math.round(parseFloat(String(k.value).replace(/[^0-9.]/g, ''))) : 0; };
+  const on1 = D.companies.filter(c => c.$.lists >= 1).length, live = isCustom();
+  const steps = [
+    { l: 'Records in Airtable', n: kc('Records in Airtable') },
+    { l: 'Unique companies after merging duplicates', n: kc('Unique companies') },
+    { l: 'Track-relevant (Workforce / Lifelong Learning)', n: kc('Track-relevant') },
+    { l: 'Scored', n: kc('Scored'), note: 'includes companies screened in despite their tags' },
+    { l: 'Ranked (pass the Workforce-fit gate)', n: kc('Ranked'), liveN: S.nRanked },
+    { l: 'Shortlisted', n: on1, sub: 'on at least one of the four shortlists', liveN: on1 },
+  ];
+  const max = steps[0].n || 1;
+  const html = steps.map(s => {
+    const isLive = live && s.liveN != null;
+    const val = s.l === 'Shortlisted' ? on1 : (isLive ? s.liveN : s.n);
+    return `<div class="fstep ${isLive ? 'live' : ''}"><div class="fhead"><span class="fv num">${val}</span><span class="fl">${esc(s.l)}${isLive ? ' (your settings)' : ''}</span></div>
+      <div class="ftrack"><div class="ffill" style="width:${Math.max(1.5, val / max * 100).toFixed(1)}%"></div></div>
+      ${s.sub ? `<div class="fnote">${esc(s.sub)}</div>` : ''}${s.note ? `<div class="fnote">${esc(s.note)}</div>` : ''}</div>`;
+  }).join('');
+  el.innerHTML = `<div class="pagehead"><div><h2>Overview</h2><p class="muted">${esc(intro)}</p></div></div>${customFlag()}
+    <section class="card funnel">${html}</section><div class="grid charts" style="margin-top:24px">${(D.charts || []).map(ch => chartCard(ch)).join('')}</div>`;
+}
 
 /* ---------- Highlights (sponsors) */
 VIEWS.highlights = el => {
@@ -632,10 +679,13 @@ VIEWS.shortlists = el => {
   const on = n => L.filter(c => c.$.lists === n).length;
   const keys = D.v2 ? [...RK, 'V2'] : RK;
   const counts = N === 4 ? `${on(4)} on all four · ${on(3)} on three · ${on(2)} on two · ${on(1)} on one` : `${on(3)} on all three · ${on(2)} on two · ${on(1)} on one`;
-  let html = `<div class="pagehead"><div><h2>Shortlists & overlap</h2><p class="muted">Top ${S.len} on each of the ${WORD} rubrics${D.v2 ? ' (three rubrics plus MindCET v2)' : ''}, out of ${S.nRanked} ranked companies. Companies on all ${WORD} lists are the safest names to highlight first.</p></div></div>${customFlag()}
-    <div class="filters"><div class="seg" role="group" aria-label="View"><button data-v="side" aria-pressed="${S.slView === 'side'}">Side by side</button><button data-v="overlap" aria-pressed="${S.slView === 'overlap'}">Overlap</button></div>
+  const org = ORG(), view = org ? S.asView : S.slView;
+  const head = org ? `<h2>Automated shortlist</h2><p class="muted">Companies that reach the top ${S.len} on any of the four rubrics (${L.filter(c => c.$.lists > 0).length} companies, out of ${S.nRanked} ranked). Companies on all four lists are the safest names to highlight first.</p>`
+    : `<h2>Shortlists & overlap</h2><p class="muted">Top ${S.len} on each of the ${WORD} rubrics${D.v2 ? ' (three rubrics plus MindCET v2)' : ''}, out of ${S.nRanked} ranked companies. Companies on all ${WORD} lists are the safest names to highlight first.</p>`;
+  let html = `<div class="pagehead"><div>${head}</div></div>${customFlag()}
+    <div class="filters"><div class="seg" role="group" aria-label="View"><button data-v="side" aria-pressed="${view === 'side'}">Side by side</button><button data-v="overlap" aria-pressed="${view === 'overlap'}">${org ? 'Table' : 'Overlap'}</button></div>
     <span class="count">${counts}</span></div>`;
-  if (S.slView === 'side') {
+  if (view === 'side') {
     html += `<div class="grid sl3">${keys.map(r => {
       const v = r === 'V2', rb = v ? null : D.rubrics[r], mx = v ? v2max() : maxScore(r);
       const q = v ? 'Pain point, pedagogy, UX, evidence, viability and growth, equal weight.' : r === 'R1' ? 'A shared core plus one lens per stakeholder.' : rb.rows[0].question;
@@ -654,9 +704,10 @@ VIEWS.shortlists = el => {
         <td class="r">${rk(c, 'R1')}</td><td class="r">${rk(c, 'R2')}</td><td class="r">${rk(c, 'R3')}</td>${D.v2 ? `<td class="r">${rk(c, 'V2')}</td>` : ''}<td>${wcChip(c.wc)}</td><td class="wrap muted">${esc(c.note)}</td></tr>`).join('')}</tbody></table></div>`;
   }
   el.innerHTML = html;
-  $$('[data-v]', el).forEach(b => b.addEventListener('click', () => { S.slView = b.dataset.v; render(); }));
+  $$('[data-v]', el).forEach(b => b.addEventListener('click', () => { if (org) S.asView = b.dataset.v; else S.slView = b.dataset.v; render(); }));
 };
 
+VIEWS.auto = VIEWS.shortlists;
 const v2max = () => S.v2w.reduce((a, b) => a + b, 0);
 
 /* ---------- Explorer */
@@ -795,6 +846,23 @@ function drawMovers() {
 }
 document.addEventListener('click', e => { const a = e.target.closest('a[data-act="open"]'); if (a) e.preventDefault(); });
 
+/* ---------- Rubric (organisers): lab + method reference */
+VIEWS.rubric = el => {
+  VIEWS.lab(el);
+  $('.pagehead', el).innerHTML = `<div><h2>Rubric</h2><p class="muted">Change the weights, the fit gate or the list length and the automated shortlist recalculates. Your settings are saved in this browser only and never change the sheet. The reference sections below explain how the scores were made and what each score level means.</p></div>`;
+  const tmp = document.createElement('div');
+  VIEWS.method(tmp);
+  const prose = $('.prose', tmp);
+  const secs = [...prose.children];
+  const find = t => secs.find(s => (s.querySelector('h3') || {}).textContent === t);
+  const order = ['How the scores were made', 'The three rubrics', 'Sheet weights', 'Criterion anchors (score 0–4)', 'MindCET v2 rubric', 'Light web check', 'Before anything goes public'];
+  const ref = document.createElement('div');
+  ref.className = 'prose';
+  ref.innerHTML = '<div class="sec"><h3 style="font-size:22px">Reference</h3></div>';
+  order.forEach(t => { const s = find(t); if (s) ref.appendChild(s); });
+  el.appendChild(ref);
+};
+
 /* ---------- Pipeline */
 VIEWS.pipeline = el => {
   const P = D.pipeline, E = S.pl;
@@ -869,7 +937,25 @@ function downloadCsv() {
 }
 
 /* ---------- Data quality */
+function orgQuality(el) {
+  const issues = (D.charts || []).find(c => c.id === 'issues');
+  const dupSec = (D.changes || []).find(s => /^Duplicates merged/.test(s.title));
+  const dup = (D.pipeline || []).filter(p => p.merged > 1).length;
+  const hd = r => /^Company$/.test(r[0]);
+  el.innerHTML = `<div class="pagehead"><div><h2>Data quality</h2><p class="muted">Which records need attention, and which duplicate submissions were merged.</p></div></div>
+  <div class="grid kpis">
+    <div class="kpi"><div class="v num">${(D.pipeline || []).filter(p => p.issues).length}</div><div class="l">Companies with at least one flag</div></div>
+    <div class="kpi"><div class="v num">${dup}</div><div class="l">Companies with merged duplicate submissions</div></div>
+    <div class="kpi"><div class="v num">${(D.pipeline || []).filter(p => p.late).length}</div><div class="l">Submitted after the 15 Sept close</div></div>
+    <div class="kpi"><div class="v num">${(D.companies || []).filter(c => c.wc === 'Not found' || /watch/i.test(c.wc)).length}</div><div class="l">Shortlisted with "Not found" or "watch" web check</div></div>
+  </div>
+  <div class="grid charts">${issues ? chartCard(issues) : ''}
+  ${dupSec ? `<section class="card wide"><h3 style="margin-bottom:10px">${esc(dupSec.title)}</h3><div class="tablewrap simple-table"><table class="plain"><tbody>
+    ${dupSec.rows.map((r, i) => `<tr>${r.filter((v, j) => v || j === 0).map(v => { const tg = i === 0 && hd(r) ? 'th' : 'td'; return `<${tg}>${esc(v)}</${tg}>`; }).join('')}</tr>`).join('')}</tbody></table></div></section>` : ''}
+  </div>`;
+}
 VIEWS.quality = el => {
+  if (ORG()) return orgQuality(el);
   const issues = (D.charts || []).find(c => c.id === 'issues');
   const dup = (D.pipeline || []).filter(p => p.merged > 1).length;
   el.innerHTML = `<div class="pagehead"><div><h2>Data quality</h2><p class="muted">What changed when the screen moved from the Google Sheet export to the Airtable source, and which records need attention before anything goes public.</p></div></div>
