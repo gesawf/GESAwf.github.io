@@ -214,6 +214,12 @@
   input.w.zero { color: var(--muted); }
   input.w.changed { border-color: var(--accent); }
   tr.group td { background: var(--surface2); font-weight: 500; font-size: 12.5px; }
+  .anchorlinks { margin: 0 0 20px; } .rsec { scroll-margin-top: 70px; }
+  .wlist { display: grid; gap: 8px; margin-top: 10px; } .wrow { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 14px; }
+  .winp { display: inline-flex; align-items: center; gap: 4px; } .winp input.w { width: 72px; }
+  .wtotal { display: flex; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .labstack { display: grid; gap: 16px; min-width: 0; } .prizeblk { min-width: 0; } .prizeblk h4 { margin: 0 0 4px; font-size: 14px; }
+  tr.cutoff td { text-align: center; font-size: 12px; color: var(--muted); border-top: 2px dashed var(--line); padding: 6px; }
   .warnline { color: var(--warn); font-size: 13px; }
   .movers { grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
   .movers ul { margin: 6px 0 0; padding-left: 18px; font-size: 13.5px; }
@@ -422,7 +428,9 @@ function start(data) {
   buildTabs();
   const want = (location.hash || '').slice(1);
   show(resolveTab(want) || TABS[0].id);
-  window.addEventListener('hashchange', () => { const h = resolveTab(location.hash.slice(1)); if (h && h !== S.tab) show(h); });
+  const toLab = () => setTimeout(() => { const n = $('#rubric-lab'); if (n) n.scrollIntoView(); }, 50);
+  if (ORG() && want === 'lab') toLab();
+  window.addEventListener('hashchange', () => { const raw = location.hash.slice(1), h = resolveTab(raw); if (h && (h !== S.tab || (ORG() && raw === 'lab'))) show(h); if (ORG() && raw === 'lab') toLab(); });
   initTip();
 }
 
@@ -550,7 +558,7 @@ function customFlag() {
 document.addEventListener('click', e => {
   const a = e.target.closest('[data-act]');
   if (!a) return;
-  if (a.dataset.act === 'reset') { const t = S.tab; const keep = { ex: S.ex, ex2: S.ex2, pl: S.pl, slView: S.slView, asView: S.asView }; S = { ...defaults(), ...keep, tab: t }; compute(S); persist(); render(); }
+  if (a.dataset.act === 'reset') { const t = S.tab; const keep = { ex: S.ex, ex2: S.ex2, pl: S.pl, slView: S.slView, asView: S.asView, slAll: S.slAll }; S = { ...defaults(), ...keep, tab: t }; compute(S); persist(); render(); }
   if (a.dataset.act === 'golab') show(ORG() ? 'rubric' : 'lab');
   if (a.dataset.act === 'open') openCompany(a.dataset.id);
   if (a.dataset.act === 'toggle-table') { const card = a.closest('.card'); card.classList.toggle('as-table'); $('.chart-body', card).classList.toggle('hidden'); $('.chart-table', card).classList.toggle('hidden'); a.textContent = card.classList.contains('as-table') ? 'Show chart' : 'Show table'; }
@@ -666,12 +674,12 @@ function orgOverview(el, intro) {
     { l: 'Track-relevant (Workforce / Lifelong Learning)', n: kc('Track-relevant') },
     { l: 'Scored', n: kc('Scored'), note: 'includes companies screened in despite their tags' },
     { l: 'Ranked (pass the Workforce-fit gate)', n: kc('Ranked'), liveN: S.nRanked },
-    { l: 'Shortlisted', n: on1, sub: 'companies on the shortlist', liveN: on1 },
+    { l: 'Shortlisted', n: on1, sub: 'top 50 on MindCET v2', liveN: on1 },
   ];
   const max = steps[0].n || 1;
   const html = steps.map(s => {
-    const isLive = live && s.liveN != null;
-    const val = s.l === 'Shortlisted' ? on1 : (isLive ? s.liveN : s.n);
+    const isLive = live && s.liveN != null && s.l !== 'Shortlisted';
+    const val = s.l === 'Shortlisted' ? Math.min(50, S.nV2 || 0) : (isLive ? s.liveN : s.n);
     return `<div class="fstep ${isLive ? 'live' : ''}"><div class="fhead"><span class="fv num">${val}</span><span class="fl">${esc(s.l)}${isLive ? ' (your settings)' : ''}</span></div>
       <div class="ftrack"><div class="ffill" style="width:${Math.max(1.5, val / max * 100).toFixed(1)}%"></div></div>
       ${s.sub ? `<div class="fnote">${esc(s.sub)}</div>` : ''}${s.note ? `<div class="fnote">${esc(s.note)}</div>` : ''}</div>`;
@@ -875,24 +883,65 @@ const V2_ORDER = ['pain', 'pedagogy', 'ux', 'viability', 'growth', 'evidence'];
 const v2Disp = () => V2_ORDER.map(k => D.v2.criteria.findIndex(c => c.key === k)).filter(i => i >= 0);
 const v2Rank = c => (c.$.v2 && c.$.v2.rank != null) ? c.$.v2.rank : null;
 
+/* v2 scores/ranks for any weight vector; same formula and tie-breaks as compute() */
+function v2Calc(w) {
+  const iE = D.v2.criteria.findIndex(k => k.key === 'evidence'), iV = D.v2.criteria.findIndex(k => k.key === 'viability');
+  const m = new Map();
+  D.companies.forEach(c => { if (c.v) m.set(c.id, { sc: w.reduce((a, wi, i) => a + wi * c.v[i], 0) / 4, rank: null }); });
+  const L2 = D.companies.filter(c => c.v && c.$.ranked);
+  L2.forEach(c => { const e = m.get(c.id); e.key = e.sc + c.v[iE] / 100 + c.v[iV] / 1000 + (1000 - c.row) / 1e7; });
+  L2.forEach(c => { const k = m.get(c.id).key; c.__r = 1 + L2.filter(o => m.get(o.id).key > k).length; });
+  L2.forEach(c => { m.get(c.id).rank = c.__r; delete c.__r; });
+  return m;
+}
+let _v2base = null;
+const v2Base = () => _v2base || (_v2base = v2Calc(D.v2.w));
+
+/* Prize lists (shared by the Prizes tab and the Rubric lab preview) */
+function prizeLists(calc) {
+  const iEv = D.v2.criteria.findIndex(k => k.key === 'evidence'), iCh = CI('change');
+  const pool = D.companies.filter(c => c.v && calc.has(c.id));
+  const rk = c => calc.get(c.id).rank, sc = c => calc.get(c.id).sc;
+  const byV2 = (a, b) => sc(b) - sc(a) || (rk(a) ?? 1e9) - (rk(b) ?? 1e9) || a.row - b.row;
+  const P = [
+    { id: 'path', short: 'Pathways', title: 'Pathways into work', pool: pool.filter(c => c.seg === 'Pathways'), sort: byV2 },
+    { id: 'up', short: 'Upskilling', title: 'Upskilling at work', pool: pool.filter(c => c.seg === 'Upskilling'), sort: byV2 },
+    { id: 'em', short: 'Emerging market', title: 'Emerging-market solution', pool: pool.filter(c => c.em === true), sort: byV2 },
+    { id: 'ev', short: 'Evidence', title: 'Evidence award', pool: pool.slice(), sort: (a, b) => b.v[iEv] - a.v[iEv] || b.s[iCh] - a.s[iCh] || byV2(a, b) },
+  ];
+  P.forEach(p => { p.all = p.pool.slice().sort(p.sort); p.top = p.all.slice(0, 15); p.ids = new Set(p.top.map(c => c.id)); });
+  return P;
+}
+
 VIEWS.rubric = el => {
   const V = D.v2, order = v2Disp();
-  const rows = order.map(j => { const k = V.criteria[j], v = S.v2w[j];
+  const rows = order.map(j => { const k = V.criteria[j];
     return `<tr><td class="crit"><b>${esc(k.label)}</b><div class="small muted">${esc(k.desc)}</div></td>
-      <td class="c wt"><input class="w ${v ? '' : 'zero'} ${Math.abs(v - V.w[j]) > 1e-9 ? 'changed' : ''}" type="number" min="0" max="100" step="any" inputmode="decimal" value="${+v.toFixed(2)}" data-v2j="${j}" aria-label="${esc('Weight (%): ' + k.label)}" /> <span class="muted small">%</span></td>
-      ${k.levels.map(l => `<td>${esc(l)}</td>`).join('')}</tr>`; }).join('');
-  el.innerHTML = `<div class="pagehead"><div><h2>Rubric</h2><p class="muted">The MindCET v2 rubric: six criteria, each scored 0–4. Change a weight and the Shortlist, All scores and Prizes tabs recalculate. Your changes are saved in this browser only and never change the sheet.</p></div></div>
+      <td class="c num">${+V.w[j].toFixed(1)}%</td>${k.levels.map(l => `<td>${esc(l)}</td>`).join('')}</tr>`; }).join('');
+  const labRows = order.map(j => { const k = V.criteria[j], v = S.v2w[j];
+    return `<label class="wrow"><span>${esc(k.label)}</span><span class="winp"><input class="w ${v ? '' : 'zero'} ${Math.abs(v - V.w[j]) > 1e-9 ? 'changed' : ''}" type="number" min="0" max="100" step="any" inputmode="decimal" value="${+v.toFixed(2)}" data-v2j="${j}" aria-label="${esc('Weight (%): ' + k.label)}" /><span class="muted small">%</span></span></label>`; }).join('');
+  el.innerHTML = `<div class="pagehead"><div><h2>Rubric</h2><p class="muted">How companies are scored on MindCET v2, and a lab to test other weights.</p></div></div>
+  <p class="anchorlinks"><a href="#rubric-desc" data-jump="rubric-desc">Rubric</a> · <a href="#rubric-lab" data-jump="rubric-lab">Rubric lab</a></p>
+  <section id="rubric-desc" class="rsec"><h3 class="prizeh" style="margin-top:0">Rubric</h3>
+  <p class="muted">Six criteria, each scored 0–4 and weighted as on the sheet. These weights are fixed here; to try other weights, use the Rubric lab below.</p>
   <section class="card" style="padding:0;overflow:hidden"><div class="tablewrap" style="border:0;border-radius:0;max-height:none"><table class="plain anchors rubric-v2"><thead><tr><th>Criterion</th><th class="c">Weight</th><th>0–1 Weak</th><th>2 Adequate</th><th>3 Strong</th><th>4 Exceptional</th></tr></thead>
-    <tbody>${rows}<tr class="totrow"><td><b>Total</b></td><td class="c num" id="rt-v2"></td><td colspan="4" class="muted small">Evidence of change weighs more because it is the track's central question.</td></tr></tbody></table></div></section>
-  <p style="margin:14px 0 0"><button class="btn sm" data-act="reset-v2">Reset to sheet weights</button></p>
-  <section class="card" style="margin-top:24px" id="v2chg"></section>`;
+    <tbody>${rows}</tbody></table></div></section>
+  <p class="small muted" style="margin:10px 0 0">Evidence of change weighs more because it is the track's central question.</p></section>
+  <section id="rubric-lab" class="rsec" style="margin-top:36px"><h3 class="prizeh" style="margin-top:0">Rubric lab</h3>
+  <p class="muted">Type your own weights and see at once who enters or leaves the top 50 and how the prize lists move. Changes are saved in this browser only and never change the sheet.</p>
+  <div class="grid lab-grid"><section class="card"><h3>Weights (%)</h3><div class="wlist">${labRows}</div>
+    <div class="wtotal"><b>Total</b> <span class="num" id="rt-v2"></span></div>
+    <p style="margin:12px 0 0"><button class="btn sm" data-act="reset-v2">Reset to sheet weights</button></p></section>
+  <div id="labv"></div></div></section>`;
   let t;
   $$('input.w[data-v2j]', el).forEach(inp => inp.addEventListener('input', () => {
     const v = Math.max(0, Math.min(100, parseFloat(inp.value) || 0)), j = +inp.dataset.v2j;
     S.v2w[j] = v; inp.classList.toggle('zero', !v); inp.classList.toggle('changed', Math.abs(v - D.v2.w[j]) > 1e-9);
-    clearTimeout(t); t = setTimeout(() => { compute(S); persist(); v2Totals(); drawV2Changes(); }, 120);
+    v2Totals();
+    clearTimeout(t); t = setTimeout(() => { compute(S); persist(); drawLab(); }, 120);
   }));
-  v2Totals(); drawV2Changes();
+  $$('[data-jump]', el).forEach(a => a.addEventListener('click', e => { e.preventDefault(); const n = document.getElementById(a.dataset.jump); if (n) n.scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
+  v2Totals(); drawLab();
 };
 document.addEventListener('click', e => {
   if (e.target.closest('[data-act="reset-v2"]')) { S.v2w = D.v2.w.slice(); compute(S); persist(); render(); }
@@ -901,33 +950,57 @@ function v2Totals() {
   const n = $('#rt-v2'); if (!n) return; const t = v2max();
   n.innerHTML = fmt(t, 1) + '%' + (Math.abs(t - 100) > 0.01 ? ' <span class="warnline">(should be 100)</span>' : '');
 }
-function drawV2Changes() {
-  const box = $('#v2chg'); if (!box) return;
-  const N = S.len, L = D.companies;
-  const inNow = L.filter(c => v2Rank(c) != null && v2Rank(c) <= N);
-  const wasIn = L.filter(c => BASE[c.id].V2 != null && BASE[c.id].V2 <= N);
-  const enter = inNow.filter(c => !wasIn.includes(c)).sort((a, b) => v2Rank(a) - v2Rank(b));
-  const leave = wasIn.filter(c => !inNow.includes(c)).sort((a, b) => BASE[a.id].V2 - BASE[b.id].V2);
-  const item = (c, txt) => `<li><a href="#" data-act="open" data-id="${esc(c.id)}">${esc(c.name)}</a> <span class="muted small">${txt}</span></li>`;
-  box.innerHTML = `<h3>What changed</h3><p class="small muted" style="margin:4px 0 10px">Companies that enter or leave the MindCET v2 top ${N}, compared with the sheet's weights.</p>` +
-    (enter.length || leave.length ? `<div class="grid two"><div><p class="small" style="margin:0"><b class="delta up">Enter (${enter.length})</b></p><ul>${enter.map(c => item(c, `now #${v2Rank(c)}, sheet #${BASE[c.id].V2 ?? '–'}`)).join('') || '<li class="muted">None</li>'}</ul></div>
-      <div><p class="small" style="margin:0"><b class="delta down">Leave (${leave.length})</b></p><ul>${leave.map(c => item(c, `sheet #${BASE[c.id].V2}, now #${v2Rank(c) ?? '–'}`)).join('') || '<li class="muted">None</li>'}</ul></div></div>`
-      : `<p class="muted" style="margin:0">No change: the top ${N} is the same as on the sheet.</p>`);
+function drawLab() {
+  const box = $('#labv'); if (!box) return;
+  const N = 50, L = D.companies, same = !v2Custom();
+  const cur = v2Calc(S.v2w), base = v2Base();
+  const rk = (m, c) => m.has(c.id) ? m.get(c.id).rank : null;
+  const badge = (now, was, isNew) => {
+    if (isNew || was == null) return '<span class="delta new">new</span>';
+    const d = was - now;
+    return d > 0 ? `<span class="delta up">▲${d}</span>` : d < 0 ? `<span class="delta down">▼${-d}</span>` : '<span class="delta muted">=</span>';
+  };
+  const li = (c, n, sub, right) => `<li tabindex="0" data-act="open" data-id="${esc(c.id)}"><span class="rk">${n}</span><div style="min-width:0"><div class="nm" title="${esc(c.name)}">${esc(c.name)}</div><div class="sub">${sub}</div></div><div class="sc">${right}</div></li>`;
+  const ranked = m => L.filter(c => rk(m, c) != null).sort((a, b) => rk(m, a) - rk(m, b));
+  const curR = ranked(cur), baseR = ranked(base);
+  const inTop = (m, c) => rk(m, c) != null && rk(m, c) <= N;
+  const enter = curR.filter(c => !inTop(base, c)).filter(c => inTop(cur, c));
+  const leave = baseR.filter(c => inTop(base, c) && !inTop(cur, c)).sort((a, b) => rk(base, a) - rk(base, b));
+  const mv = (c, a, b) => li(c, rk(cur, c) ?? '–', `${esc(c.country)}`, a);
+  const entL = enter.map(c => li(c, rk(cur, c), `${esc(c.country)} · was #${rk(base, c)}`, '<span class="delta up">▲ in</span>')).join('');
+  const levL = leave.map(c => li(c, rk(cur, c) ?? '–', `${esc(c.country)} · was #${rk(base, c)}`, '<span class="delta down">▼ out</span>')).join('');
+  const top10 = curR.slice(0, 10), base10 = new Set(baseR.slice(0, 10).map(c => c.id));
+  const shortHtml = `<section class="card"><h3>Shortlist (top ${N}) ${same ? '<span class="chip">Same as the sheet</span>' : ''}</h3>
+    ${same ? `<p class="muted small" style="margin:6px 0 10px">Same as the sheet: no company enters or leaves the top ${N}. Change a weight to see the effect.</p>`
+    : enter.length || leave.length ? `<div class="grid two"><div><p class="small" style="margin:6px 0 0"><b class="delta up">Enter (${enter.length})</b></p><ol class="slist">${entL || '<li class="muted">None</li>'}</ol></div>
+      <div><p class="small" style="margin:6px 0 0"><b class="delta down">Leave (${leave.length})</b></p><ol class="slist">${levL || '<li class="muted">None</li>'}</ol></div></div>`
+    : `<p class="muted small" style="margin:6px 0 10px">No change: the same ${N} companies as on the sheet (the order may differ).</p>`}
+    <p class="small" style="margin:14px 0 0"><b>Top 10 now</b> <span class="muted">(change vs the sheet rank)</span></p>
+    <ol class="slist">${top10.map(c => li(c, rk(cur, c), esc(c.country), `<span class="num">${fmt(cur.get(c.id).sc, 1)}</span> ${badge(rk(cur, c), rk(base, c), !base10.has(c.id))}`)).join('')}</ol></section>`;
+  const PC = prizeLists(cur), PB = prizeLists(base);
+  const prizeHtml = PC.map((p, i) => {
+    const b = PB[i], bpos = new Map(b.all.map((c, k) => [c.id, k + 1])), b5 = new Set(b.all.slice(0, 5).map(c => c.id));
+    const ent = p.top.filter(c => !b.ids.has(c.id)), lft = b.top.filter(c => !p.ids.has(c.id));
+    const names = a => a.map(c => esc(c.name)).join(', ');
+    return `<div class="prizeblk"><h4>${esc(p.title)}</h4><ol class="slist">${p.all.slice(0, 5).map((c, k) => li(c, k + 1, esc(c.country) + (p.id === 'ev' ? ` · Ev ${c.v[D.v2.criteria.findIndex(x => x.key === 'evidence')]}/4` : ''), `<span class="num">${fmt(cur.get(c.id).sc, 1)}</span> ${badge(k + 1, bpos.get(c.id), !b5.has(c.id))}`)).join('') || '<li class="muted">No eligible companies</li>'}</ol>
+      <p class="small" style="margin:6px 0 0">${ent.length || lft.length ? `<b>Entered top 15:</b> ${names(ent) || 'none'}<br><b>Left top 15:</b> ${names(lft) || 'none'}` : '<span class="muted">No change in the top 15.</span>'}</p></div>`;
+  }).join('');
+  const prizeCard = `<section class="card"><h3>Prizes ${same ? '<span class="chip">Same as the sheet</span>' : ''}</h3>
+    <p class="muted small" style="margin:6px 0 12px">Current top 5 for each prize, with movement against the sheet weights.${same ? ' Same as the sheet for now.' : ''}</p>
+    <div class="grid two">${prizeHtml}</div></section>`;
+  box.innerHTML = `<div class="labstack">${shortHtml}${prizeCard}</div>`;
 }
 
 function orgShortlist(el) {
-  const L = D.companies;
-  const avg = c => c.$.sc.R1 + c.$.sc.R2 + c.$.sc.R3 + (c.$.v2 ? c.$.v2.sc : 0);
-  const rows = L.filter(c => c.$.lists > 0).sort((a, b) => {
-    const x = v2Rank(a), y = v2Rank(b);
-    if (x != null && y != null) return x - y || a.row - b.row;
-    if (x != null) return -1; if (y != null) return 1;
-    return b.$.lists - a.$.lists || (avg(b) - avg(a)) || a.row - b.row;
-  });
-  el.innerHTML = `<div class="pagehead"><div><h2>Shortlist</h2><p class="muted">${rows.length} companies on the MindCET v2 shortlist (top ${S.len}) or the track shortlists, ordered by their MindCET v2 rank.</p></div></div>${customFlag()}
-  <div class="tablewrap"><table><thead><tr><th class="r">#</th><th>Company</th><th>Country</th><th class="r">MindCET v2</th><th>Web check</th><th>Why it stands out</th></tr></thead><tbody>
-  ${rows.map(c => `<tr class="click" tabindex="0" data-act="open" data-id="${esc(c.id)}"><td class="r muted">${v2Rank(c) ?? '–'}</td><td class="name">${esc(c.name)} ${lateChip(c)}</td><td>${esc(c.country)}</td>
-    <td class="r num">${c.$.v2 ? fmt(c.$.v2.sc, 1) : '<span class="muted">–</span>'}</td><td>${wcChip(c.wc)}</td><td class="wrap muted">${esc(c.note)}</td></tr>`).join('')}</tbody></table></div>`;
+  const N = 50, all = D.companies.filter(c => v2Rank(c) != null).sort((a, b) => v2Rank(a) - v2Rank(b) || a.row - b.row);
+  const full = !!S.slAll, rows = full ? all : all.slice(0, N);
+  const tr = c => `<tr class="click" tabindex="0" data-act="open" data-id="${esc(c.id)}"><td class="r muted">${v2Rank(c)}</td><td class="name">${esc(c.name)} ${lateChip(c)}</td><td>${esc(c.country)}</td>
+    <td class="r num">${fmt(c.$.v2.sc, 1)}</td><td>${wcChip(c.wc)}</td><td class="wrap muted">${esc(c.note)}</td></tr>`;
+  const body = rows.map((c, i) => (full && i === N ? '<tr class="cutoff"><td colspan="6">Below the top 50</td></tr>' : '') + tr(c)).join('');
+  el.innerHTML = `<div class="pagehead"><div><h2>Shortlist</h2><p class="muted">The 50 highest-ranked companies on MindCET v2. Change the weights in the Rubric lab to see how the list moves.</p></div></div>${customFlag()}
+  <div class="tablewrap"><table><thead><tr><th class="r">#</th><th>Company</th><th>Country</th><th class="r">MindCET v2 score</th><th>Web check</th><th>Why it stands out</th></tr></thead><tbody>${body}</tbody></table></div>
+  ${all.length > N ? `<p style="margin:14px 0 0"><button class="btn sm" id="sl-toggle">${full ? 'Show top 50 only' : `Show all ${all.length} scored companies`}</button></p>` : ''}`;
+  const b = $('#sl-toggle', el); if (b) b.addEventListener('click', () => { S.slAll = !S.slAll; render(); });
 }
 
 function orgExplorer(el) {
@@ -961,16 +1034,8 @@ function drawOrgExplorer() {
 
 /* ---------- Prizes (organisers) */
 VIEWS.prizes = el => {
-  const iEv = D.v2.criteria.findIndex(k => k.key === 'evidence'), iCh = CI('change');
-  const pool = D.companies.filter(c => c.v && c.$.v2);
-  const byV2 = (a, b) => b.$.v2.sc - a.$.v2.sc || (v2Rank(a) ?? 1e9) - (v2Rank(b) ?? 1e9) || a.row - b.row;
-  const P = [
-    { id: 'path', short: 'Pathways', title: 'Pathways into work', what: 'Products that help people move into jobs: training, matching and first placements.', pool: pool.filter(c => c.seg === 'Pathways'), sort: byV2 },
-    { id: 'up', short: 'Upskilling', title: 'Upskilling at work', what: 'Products that build skills for people already working, including workforce infrastructure.', pool: pool.filter(c => c.seg === 'Upskilling'), sort: byV2 },
-    { id: 'em', short: 'Emerging market', title: 'Emerging-market solution', what: 'Solutions built for, and working in, emerging markets.', pool: pool.filter(c => c.em === true), sort: byV2 },
-    { id: 'ev', short: 'Evidence', title: 'Evidence award', what: 'The strongest proof that the product changes outcomes for learners or workers.', pool: pool.slice(), sort: (a, b) => b.v[iEv] - a.v[iEv] || b.s[iCh] - a.s[iCh] || byV2(a, b) },
-  ];
-  P.forEach(p => { p.all = p.pool.slice().sort(p.sort); p.top = p.all.slice(0, 15); p.ids = new Set(p.top.map(c => c.id)); });
+  const iEv = D.v2.criteria.findIndex(k => k.key === 'evidence');
+  const P = prizeLists(v2Calc(S.v2w));
   const desc = {
     path: 'Getting people from education or unemployment into a first role (training, employability, job matching).',
     up: 'Learning built into the job for people already employed, including workforce infrastructure (skills mapping, credentials, assessment).',
