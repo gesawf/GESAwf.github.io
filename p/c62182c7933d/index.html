@@ -175,6 +175,17 @@
   .sl3 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   @media (max-width: 1300px) { .sl3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 700px) { .sl3 { grid-template-columns: 1fr; } }
+  .rulebox { padding: 14px 18px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); background: color-mix(in srgb, var(--accent) 10%, transparent); margin-bottom: 20px; font-size: 15px; }
+  .prizes { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  @media (max-width: 800px) { .prizes { grid-template-columns: 1fr; } }
+  .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 600px) { .grid.two { grid-template-columns: 1fr; } }
+  .prize .sub .chip { font-size: 10.5px; padding: 3px 6px; }
+  .prize .slist .nm { white-space: normal; }
+  table.rubric-v2 td.wt { white-space: nowrap; min-width: 110px; }
+  table.rubric-v2 td.crit { min-width: 220px; }
+  table.rubric-v2 td.crit b, table.rubric-v2 td.crit .small { display: block; }
+  table.rubric-v2 tr.totrow td { border-top: 2px solid var(--line2); }
   .slist { list-style: none; margin: 0; padding: 0; }
   .slist li { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: center; padding: 8px 6px; border-top: 1px solid var(--line); cursor: pointer; border-radius: 6px; }
   .slist li:hover { background: color-mix(in srgb, var(--body) 4%, transparent); }
@@ -385,7 +396,7 @@ function start(data) {
   $('#aud').textContent = D.meta.label;
   $('#lock').classList.add('hidden');
   $('#app').classList.remove('hidden');
-  $('#foot').innerHTML = `Confidential · ${esc(D.meta.label)} view · data generated ${esc(D.meta.generated)} · ${esc(D.meta.source)}`;
+  $('#foot').innerHTML = F.layout === 'organisers' ? 'Confidential' : `Confidential · ${esc(D.meta.label)} view · data generated ${esc(D.meta.generated)} · ${esc(D.meta.source)}`;
   C = D.criteria;
   (D.companies || []).forEach(c => byId[c.id] = c);
   (D.pipeline || []).forEach(p => pById[p.id] = p);
@@ -396,6 +407,7 @@ function start(data) {
     D.companies.forEach(c => BASE[c.id] = { ...c.$.rank, lists: c.$.lists, V2: c.$.v2 ? c.$.v2.rank : null });
     const saved = store.get(SKEY + ':settings', localStorage);
     if (saved && F.reweight) { try { Object.assign(S, JSON.parse(saved)); clampState(); } catch (e) {} }
+    if (ORG()) { const d0 = defaults(); S.w = d0.w; S.gate = d0.gate; S.len = d0.len; S.lateMode = 'include'; }
     compute(S);
   }
   buildTabs();
@@ -415,7 +427,7 @@ function defaults() {
   return { w: D.companies ? defaultWeights() : {}, gate: st.gate ?? 3, len: st.length ?? 30, lateMode: 'include', tab: null,
     ex: { q: '', region: '', wc: '', lists: '', late: '', ranked: 'ranked', il: '', sort: 'R1', dir: 1 },
     pl: { q: '', region: '', track: '', scored: '', late: '', stage: '', issue: '', il: '', sort: 'name', dir: 1 },
-    slView: 'side', asView: 'overlap', v2w: D.v2 ? D.v2.w.slice() : null };
+    ex2: { q: '', region: '', wc: '', sort: 'V2', dir: 1 }, slView: 'side', asView: 'overlap', v2w: D.v2 ? D.v2.w.slice() : null };
 }
 function clampState() {
   const dw = defaultWeights();
@@ -487,8 +499,8 @@ function resolveTab(h) {
 }
 function buildTabs() {
   if (ORG()) {
-    TABS = [{ id: 'overview', label: 'Overview' }, { id: 'rubric', label: 'Rubric' }, { id: 'auto', label: 'Automated shortlist' },
-      { id: 'explorer', label: 'All scores' }, { id: 'quality', label: 'Data quality' }];
+    TABS = [{ id: 'overview', label: 'Overview' }, { id: 'rubric', label: 'Rubric' }, { id: 'auto', label: 'Shortlist' },
+      { id: 'explorer', label: 'All scores' }, { id: 'prizes', label: 'Prizes' }, { id: 'quality', label: 'Data quality' }];
     $('#tabs').innerHTML = TABS.map(t => `<button role="tab" data-tab="${t.id}" aria-selected="false">${esc(t.label)}</button>`).join('');
     $('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) show(b.dataset.tab); });
     return;
@@ -516,6 +528,7 @@ function render() { $('#view').innerHTML = ''; VIEWS[S.tab]($('#view')); }
 
 function customFlag() {
   if (!F.reweight || !isCustom()) return '';
+  if (ORG() && S.tab === 'rubric') return '';
   const bits = [];
   if (S.gate !== D.settings.gate) bits.push(`fit gate ≥ ${S.gate}`);
   if (S.len !== D.settings.length) bits.push(`top ${S.len}`);
@@ -523,13 +536,13 @@ function customFlag() {
   if (RK.some(r => JSON.stringify(S.w[r]) !== JSON.stringify(defaultWeights()[r]))) bits.push('custom weights');
   if (v2Custom()) bits.push('custom MindCET v2 weights');
   return `<div class="custom-flag"><span class="chip accent"><i></i>What-if</span><span>Showing your settings (${esc(bits.join(', '))}), not the sheet's.</span>
-    <span class="spacer"></span><button class="btn sm" data-act="reset">Reset to sheet</button>${S.tab !== 'lab' ? '<button class="btn sm" data-act="golab">Open rubric lab</button>' : ''}</div>`;
+    <span class="spacer"></span><button class="btn sm" data-act="reset">Reset to sheet</button>${S.tab !== 'lab' && S.tab !== 'rubric' ? `<button class="btn sm" data-act="golab">${ORG() ? 'Open rubric' : 'Open rubric lab'}</button>` : ''}</div>`;
 }
 document.addEventListener('click', e => {
   const a = e.target.closest('[data-act]');
   if (!a) return;
-  if (a.dataset.act === 'reset') { const t = S.tab; const keep = { ex: S.ex, pl: S.pl, slView: S.slView, asView: S.asView }; S = { ...defaults(), ...keep, tab: t }; compute(S); persist(); render(); }
-  if (a.dataset.act === 'golab') show('lab');
+  if (a.dataset.act === 'reset') { const t = S.tab; const keep = { ex: S.ex, ex2: S.ex2, pl: S.pl, slView: S.slView, asView: S.asView }; S = { ...defaults(), ...keep, tab: t }; compute(S); persist(); render(); }
+  if (a.dataset.act === 'golab') show(ORG() ? 'rubric' : 'lab');
   if (a.dataset.act === 'open') openCompany(a.dataset.id);
   if (a.dataset.act === 'toggle-table') { const card = a.closest('.card'); card.classList.toggle('as-table'); $('.chart-body', card).classList.toggle('hidden'); $('.chart-table', card).classList.toggle('hidden'); a.textContent = card.classList.contains('as-table') ? 'Show chart' : 'Show table'; }
 });
@@ -673,6 +686,7 @@ VIEWS.highlights = el => {
 
 /* ---------- Shortlists */
 VIEWS.shortlists = el => {
+  if (ORG()) return orgShortlist(el);
   const L = D.companies, N = NL(), WORD = N === 4 ? 'four' : 'three';
   const rkOf = (c, r) => r === 'V2' ? (c.$.v2 ? c.$.v2.rank : null) : c.$.rank[r];
   const top = r => L.filter(c => rkOf(c, r) != null && rkOf(c, r) <= S.len).sort((a, b) => rkOf(a, r) - rkOf(b, r));
@@ -714,6 +728,7 @@ const v2max = () => S.v2w.reduce((a, b) => a + b, 0);
 function uniq(arr) { return [...new Set(arr.filter(Boolean))].sort((a, b) => a.localeCompare(b)); }
 function opt(v, label, cur) { return `<option value="${esc(v)}" ${String(cur) === String(v) ? 'selected' : ''}>${esc(label)}</option>`; }
 VIEWS.explorer = el => {
+  if (ORG()) return orgExplorer(el);
   const L = D.companies, E = S.ex;
   const regions = uniq(L.map(c => c.region)), wcs = uniq(L.map(c => c.wc));
   el.innerHTML = `<div class="pagehead"><div><h2>All scores</h2><p class="muted">${F.gateMin ? 'Every ranked company' : 'Every scored applicant'} with its ten criterion scores (0–4) and ${D.v2 ? 'four' : 'three'} rubric totals. Click a row for the full profile and the anchor behind each score.</p></div></div>${customFlag()}
@@ -846,21 +861,117 @@ function drawMovers() {
 }
 document.addEventListener('click', e => { const a = e.target.closest('a[data-act="open"]'); if (a) e.preventDefault(); });
 
-/* ---------- Rubric (organisers): lab + method reference */
+/* ---------- Organisers: MindCET v2 only */
+const V2_ORDER = ['pain', 'pedagogy', 'ux', 'viability', 'growth', 'evidence'];
+const v2Disp = () => V2_ORDER.map(k => D.v2.criteria.findIndex(c => c.key === k)).filter(i => i >= 0);
+const v2Rank = c => (c.$.v2 && c.$.v2.rank != null) ? c.$.v2.rank : null;
+
 VIEWS.rubric = el => {
-  VIEWS.lab(el);
-  $('.pagehead', el).innerHTML = `<div><h2>Rubric</h2><p class="muted">Change the weights, the fit gate or the list length and the automated shortlist recalculates. Your settings are saved in this browser only and never change the sheet. The reference sections below explain how the scores were made and what each score level means.</p></div>`;
-  const tmp = document.createElement('div');
-  VIEWS.method(tmp);
-  const prose = $('.prose', tmp);
-  const secs = [...prose.children];
-  const find = t => secs.find(s => (s.querySelector('h3') || {}).textContent === t);
-  const order = ['How the scores were made', 'The three rubrics', 'Sheet weights', 'Criterion anchors (score 0–4)', 'MindCET v2 rubric', 'Light web check', 'Before anything goes public'];
-  const ref = document.createElement('div');
-  ref.className = 'prose';
-  ref.innerHTML = '<div class="sec"><h3 style="font-size:22px">Reference</h3></div>';
-  order.forEach(t => { const s = find(t); if (s) ref.appendChild(s); });
-  el.appendChild(ref);
+  const V = D.v2, order = v2Disp();
+  const rows = order.map(j => { const k = V.criteria[j], v = S.v2w[j];
+    return `<tr><td class="crit"><b>${esc(k.label)}</b><div class="small muted">${esc(k.desc)}</div></td>
+      <td class="c wt"><input class="w ${v ? '' : 'zero'} ${Math.abs(v - V.w[j]) > 1e-9 ? 'changed' : ''}" type="number" min="0" max="100" step="any" inputmode="decimal" value="${+v.toFixed(2)}" data-v2j="${j}" aria-label="${esc('Weight (%): ' + k.label)}" /> <span class="muted small">%</span></td>
+      ${k.levels.map(l => `<td>${esc(l)}</td>`).join('')}</tr>`; }).join('');
+  el.innerHTML = `<div class="pagehead"><div><h2>Rubric</h2><p class="muted">The MindCET v2 rubric: six criteria, each scored 0–4. Change a weight and the Shortlist, All scores and Prizes tabs recalculate. Your changes are saved in this browser only and never change the sheet.</p></div></div>
+  <section class="card" style="padding:0;overflow:hidden"><div class="tablewrap" style="border:0;border-radius:0;max-height:none"><table class="plain anchors rubric-v2"><thead><tr><th>Criterion</th><th class="c">Weight</th><th>0–1 Weak</th><th>2 Adequate</th><th>3 Strong</th><th>4 Exceptional</th></tr></thead>
+    <tbody>${rows}<tr class="totrow"><td><b>Total</b></td><td class="c num" id="rt-v2"></td><td colspan="4" class="muted small">Evidence of change weighs more because it is the track's central question.</td></tr></tbody></table></div></section>
+  <p style="margin:14px 0 0"><button class="btn sm" data-act="reset-v2">Reset to sheet weights</button></p>
+  <section class="card" style="margin-top:24px" id="v2chg"></section>`;
+  let t;
+  $$('input.w[data-v2j]', el).forEach(inp => inp.addEventListener('input', () => {
+    const v = Math.max(0, Math.min(100, parseFloat(inp.value) || 0)), j = +inp.dataset.v2j;
+    S.v2w[j] = v; inp.classList.toggle('zero', !v); inp.classList.toggle('changed', Math.abs(v - D.v2.w[j]) > 1e-9);
+    clearTimeout(t); t = setTimeout(() => { compute(S); persist(); v2Totals(); drawV2Changes(); }, 120);
+  }));
+  v2Totals(); drawV2Changes();
+};
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-act="reset-v2"]')) { S.v2w = D.v2.w.slice(); compute(S); persist(); render(); }
+});
+function v2Totals() {
+  const n = $('#rt-v2'); if (!n) return; const t = v2max();
+  n.innerHTML = fmt(t, 1) + '%' + (Math.abs(t - 100) > 0.01 ? ' <span class="warnline">(should be 100)</span>' : '');
+}
+function drawV2Changes() {
+  const box = $('#v2chg'); if (!box) return;
+  const N = S.len, L = D.companies;
+  const inNow = L.filter(c => v2Rank(c) != null && v2Rank(c) <= N);
+  const wasIn = L.filter(c => BASE[c.id].V2 != null && BASE[c.id].V2 <= N);
+  const enter = inNow.filter(c => !wasIn.includes(c)).sort((a, b) => v2Rank(a) - v2Rank(b));
+  const leave = wasIn.filter(c => !inNow.includes(c)).sort((a, b) => BASE[a.id].V2 - BASE[b.id].V2);
+  const item = (c, txt) => `<li><a href="#" data-act="open" data-id="${esc(c.id)}">${esc(c.name)}</a> <span class="muted small">${txt}</span></li>`;
+  box.innerHTML = `<h3>What changed</h3><p class="small muted" style="margin:4px 0 10px">Companies that enter or leave the MindCET v2 top ${N}, compared with the sheet's weights.</p>` +
+    (enter.length || leave.length ? `<div class="grid two"><div><p class="small" style="margin:0"><b class="delta up">Enter (${enter.length})</b></p><ul>${enter.map(c => item(c, `now #${v2Rank(c)}, sheet #${BASE[c.id].V2 ?? '–'}`)).join('') || '<li class="muted">None</li>'}</ul></div>
+      <div><p class="small" style="margin:0"><b class="delta down">Leave (${leave.length})</b></p><ul>${leave.map(c => item(c, `sheet #${BASE[c.id].V2}, now #${v2Rank(c) ?? '–'}`)).join('') || '<li class="muted">None</li>'}</ul></div></div>`
+      : `<p class="muted" style="margin:0">No change: the top ${N} is the same as on the sheet.</p>`);
+}
+
+function orgShortlist(el) {
+  const L = D.companies;
+  const avg = c => c.$.sc.R1 + c.$.sc.R2 + c.$.sc.R3 + (c.$.v2 ? c.$.v2.sc : 0);
+  const rows = L.filter(c => c.$.lists > 0).sort((a, b) => {
+    const x = v2Rank(a), y = v2Rank(b);
+    if (x != null && y != null) return x - y || a.row - b.row;
+    if (x != null) return -1; if (y != null) return 1;
+    return b.$.lists - a.$.lists || (avg(b) - avg(a)) || a.row - b.row;
+  });
+  el.innerHTML = `<div class="pagehead"><div><h2>Shortlist</h2><p class="muted">${rows.length} companies reach the top ${S.len} on at least one of the four rubrics, ordered by their MindCET v2 rank.</p></div></div>${customFlag()}
+  <div class="tablewrap"><table><thead><tr><th class="r">#</th><th>Company</th><th>Country</th><th class="r">MindCET v2</th><th class="c">Lists</th><th>Web check</th><th>Why it stands out</th></tr></thead><tbody>
+  ${rows.map(c => `<tr class="click" tabindex="0" data-act="open" data-id="${esc(c.id)}"><td class="r muted">${v2Rank(c) ?? '–'}</td><td class="name">${esc(c.name)} ${lateChip(c)}</td><td>${esc(c.country)}</td>
+    <td class="r num">${c.$.v2 ? fmt(c.$.v2.sc, 1) : '<span class="muted">–</span>'}</td><td class="c">${dots(c.$.lists)}</td><td>${wcChip(c.wc)}</td><td class="wrap muted">${esc(c.note)}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+function orgExplorer(el) {
+  const L = D.companies.filter(c => c.v), E = S.ex2;
+  el.innerHTML = `<div class="pagehead"><div><h2>All scores</h2><p class="muted">${L.length} companies scored on MindCET v2, each criterion 0–4. Companies below the Workforce-fit bar were not scored on MindCET v2. Click a row for the full profile.</p></div></div>${customFlag()}
+  <div class="filters">
+    <input class="field" id="ex-q" type="search" placeholder="Search company, country, note…" value="${esc(E.q)}" aria-label="Search" />
+    <select class="field" id="ex-region" aria-label="Region">${opt('', 'All regions', E.region)}${uniq(L.map(c => c.region)).map(r => opt(r, r, E.region)).join('')}</select>
+    <select class="field" id="ex-wc" aria-label="Web check">${opt('', 'Any web check', E.wc)}${uniq(L.map(c => c.wc)).map(r => opt(r, r, E.wc)).join('')}</select>
+    <span class="count" id="ex-count"></span></div>
+  <div class="tablewrap" id="ex-table"></div>`;
+  const on = (id, k, ev = 'change') => { const n = $('#' + id, el); n.addEventListener(ev, () => { E[k] = n.value; drawOrgExplorer(); }); };
+  on('ex-q', 'q', 'input'); on('ex-region', 'region'); on('ex-wc', 'wc');
+  drawOrgExplorer();
+}
+function drawOrgExplorer() {
+  const E = S.ex2, q = E.q.trim().toLowerCase(), key = E.sort, dir = E.dir, order = v2Disp();
+  const rows = D.companies.filter(c => c.v && (!q || `${c.name} ${c.country} ${c.region} ${c.note} ${c.id}`.toLowerCase().includes(q)) && (!E.region || c.region === E.region) && (!E.wc || c.wc === E.wc));
+  const val = c => key === 'V2' ? (v2Rank(c) ?? 1e9) : key === 'sc' ? -c.$.v2.sc : key.startsWith('v:') ? -c.v[+key.slice(2)] : key === 'lists' ? -c.$.lists : String(c[key] || '').toLowerCase();
+  rows.sort((a, b) => { const x = val(a), y = val(b); return (x < y ? -1 : x > y ? 1 : 0) * dir || a.row - b.row; });
+  $('#ex-count').textContent = `${rows.length} of ${D.companies.filter(c => c.v).length}`;
+  const th = (k, label, cls = '', title = '') => `<th class="sortable ${cls} ${key === k ? 'sorted' : ''}" data-sort="${k}" title="${esc(title || 'Sort')}">${label}${key === k ? (dir > 0 ? ' ↓' : ' ↑') : ''}</th>`;
+  $('#ex-table').innerHTML = `<table><thead><tr>${th('V2', 'v2 #', 'r', 'Rank on MindCET v2')}${th('name', 'Company')}${th('country', 'Country')}
+    ${order.map(j => th('v:' + j, esc(D.v2.criteria[j].short), 'c', D.v2.criteria[j].label + ' (0–4)')).join('')}${th('sc', 'v2 score', 'r', 'MindCET v2 score')}${th('lists', 'Lists', 'c')}<th>Flags</th></tr></thead>
+    <tbody>${rows.map(c => `<tr class="click" tabindex="0" data-act="open" data-id="${esc(c.id)}"><td class="r">${v2Rank(c) ?? '<span class="muted">–</span>'}</td><td class="name">${esc(c.name)}</td><td>${esc(c.country)}</td>
+      ${order.map(j => `<td class="c">${heat(c.v[j])}</td>`).join('')}<td class="r num">${fmt(c.$.v2.sc, 1)}</td><td class="c">${dots(c.$.lists)}</td><td>${wcChip(c.wc)} ${lateChip(c)}</td></tr>`).join('')}</tbody></table>`;
+  $$('#ex-table th[data-sort]').forEach(h => h.addEventListener('click', () => {
+    const k = h.dataset.sort; if (S.ex2.sort === k) S.ex2.dir *= -1; else { S.ex2.sort = k; S.ex2.dir = 1; } drawOrgExplorer();
+  }));
+}
+
+/* ---------- Prizes (organisers) */
+VIEWS.prizes = el => {
+  const iEv = D.v2.criteria.findIndex(k => k.key === 'evidence'), iCh = CI('change');
+  const pool = D.companies.filter(c => c.v && c.$.v2);
+  const byV2 = (a, b) => b.$.v2.sc - a.$.v2.sc || (v2Rank(a) ?? 1e9) - (v2Rank(b) ?? 1e9) || a.row - b.row;
+  const P = [
+    { id: 'path', short: 'Pathways', title: 'Pathways into work', what: 'Products that help people move into jobs: training, matching and first placements.', pool: pool.filter(c => c.seg === 'Pathways'), sort: byV2 },
+    { id: 'up', short: 'Upskilling', title: 'Upskilling at work', what: 'Products that build skills for people already working, including workforce infrastructure.', pool: pool.filter(c => c.seg === 'Upskilling'), sort: byV2 },
+    { id: 'em', short: 'Emerging market', title: 'Emerging-market solution', what: 'Solutions built for, and working in, emerging markets.', pool: pool.filter(c => c.em === true), sort: byV2 },
+    { id: 'ev', short: 'Evidence', title: 'Evidence award', what: 'The strongest proof that the product changes outcomes for learners or workers.', pool: pool.slice(), sort: (a, b) => b.v[iEv] - a.v[iEv] || b.s[iCh] - a.s[iCh] || byV2(a, b) },
+  ];
+  P.forEach(p => { p.all = p.pool.slice().sort(p.sort); p.top = p.all.slice(0, 15); p.ids = new Set(p.top.map(c => c.id)); });
+  const card = p => `<section class="card prize"><h3>${esc(p.title)}</h3><p class="small muted" style="margin:4px 0 10px"><b>What it rewards:</b> ${esc(p.what)}</p>
+    <ol class="slist">${p.top.map((c, i) => {
+      const others = P.filter(o => o !== p && o.ids.has(c.id));
+      return `<li tabindex="0" data-act="open" data-id="${esc(c.id)}"><span class="rk">${i + 1}</span><div style="min-width:0"><div class="nm">${esc(c.name)}${p.id === 'ev' ? ` <span class="chip accent">Evidence ${c.v[iEv]}/4</span>` : ''}</div>
+      <div class="sub">${esc(c.country)}${others.length ? ' · also in: ' + others.map(o => `<span class="chip">${esc(o.short)}</span>`).join(' ') : ''}</div></div>
+      <div class="sc"><div class="num">${fmt(c.$.v2.sc, 1)}</div></div></li>`; }).join('') || '<li class="muted">No eligible companies</li>'}</ol>
+    <p class="small muted" style="margin:10px 0 0">${p.all.length} eligible</p></section>`;
+  el.innerHTML = `<div class="pagehead"><div><h2>Prizes</h2><p class="muted">Four prizes: Pathways into work, Upskilling at work (including workforce infrastructure), Emerging-market solution, and Evidence award.</p></div></div>${customFlag()}
+  <div class="rulebox"><b>One prize per company:</b> a company can be a contender in several categories but can win only one.</div>
+  <div class="grid prizes">${P.map(card).join('')}</div>`;
 };
 
 /* ---------- Pipeline */
